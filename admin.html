@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Login - Earth & Organics</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<Style>
+    .admin-body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #e7f5ec;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-container {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  max-width: 350px;
+  width: 100%;
+  text-align: center;
+}
+
+.login-container h2 {
+  margin-bottom: 1.5rem;
+  color: #2e8b57;
+}
+
+.login-container input {
+  width: 100%;
+  padding: 0.75rem;
+  margin: 0.75rem 0;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.login-container button {
+  background-color: #2e8b57;
+  color: white;
+  border: none;
+  padding: 0.8rem;
+  width: 100%;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.login-container button:hover {
+  background-color: #256f47;
+}
+
+.error-msg {
+  color: red;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.show-password {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: 0.9rem;
+  margin-top: -0.5rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.show-password input[type="checkbox"] {
+  margin-right: 8px;
+  transform: scale(1.2);
+}
+
+</Style>
+<body class="admin-body">
+  <div class="login-container">
+    <h2>Admin Login</h2>
+    <input type="email" id="username" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <div class="show-password">
+        <label>
+          <input type="checkbox" id="togglePassword" onclick="togglePasswordVisibility()" />
+          Show Password
+        </label>
+      </div>
+    <button onclick="login()">Login</button>
+    <p id="loginError" class="error-msg"></p>
+  </div>
+
+  <script>
+    function login() {
+    const email = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+
+    const validEmail = "info@earthorganicfoods.in";
+    const validPassword = "earthorganicfoods@123";
+
+    if (email === validEmail && password === validPassword) {
+      localStorage.setItem("isAdmin", "true");
+      window.location.href = "dashboard.html";
+    } else {
+      document.getElementById("loginError").innerText = "Invalid email or password.";
+    }
+  }
+
+  function togglePasswordVisibility() {
+    const pwd = document.getElementById("password");
+    pwd.type = pwd.type === "password" ? "text" : "password";
+  }
+</script>
+</body>
+</html>

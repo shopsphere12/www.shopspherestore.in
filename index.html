@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Earth & Organics Supermarket</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <div class="logo">🌍 Earth & Organics</div>
+    <nav>
+      <a href="#">Home</a>
+      <a href="#products">Products</a>
+      <li class="nav-item dropdown">
+        <label for="categorySelect" class="nav-label">Category:</label>
+        <select id="categorySelect" onchange="filterCategory()">
+          <option value="all">All</option>
+          <option value="fruits">Fruits</option>
+          <option value="vegetables">Vegetables</option>
+          <option value="grains">Grains</option>
+          <option value="dairy">Dairy</option>
+          <option value="herbs">Herbs</option>
+        </select>
+      </li>
+  
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>Fresh. Organic. Sustainable.</h1>
+    <p>Shop consciously with Earth & Organics Supermarket</p>
+    <a href="#products" class="btn">Shop Now</a>
+  </section>
+
+  <section id="categories" class="categories">
+    <h2>Our Categories</h2>
+    <div class="category-grid">
+      <div class="category">🍎 Fruits</div>
+      <div class="category">🥦 Vegetables</div>
+      <div class="category">🌾 Grains</div>
+      <div class="category">🧴 Natural Care</div>
+    </div>
+  </section>
+
+  <section id="products" class="products">
+    <h2>Featured Products</h2>
+    <div class="product-grid">
+      <div class="product-card">
+        <img src="https://images.unsplash.com/photo-1601004890684-d8cbf643f5f2" alt="Organic Apples">
+        <h3>Organic Apples</h3>
+        <p>₹120 / kg</p>
+        <button>Add to Cart</button>
+      </div>
+      <div class="product-card">
+        <img src="C:\Users\DELL\Desktop\New folder (2)\htdocs\work\61eSSpEkpML._AC_.jpg" alt="Fresh Spinach">
+        <h3>Fresh Spinach</h3>
+        <p>₹50 / bunch</p>
+        <button>Add to Cart</button>
+      </div>
+      <div class="product-card">
+        <img src="C:\Users\DELL\Desktop\New folder (2)\htdocs\work\shopping (3).webp" alt="Brown Rice">
+        <h3>Brown Rice</h3>
+        <p>₹80 / kg</p>
+        <button>Add to Cart</button>
+      </div>
+    </div>
+  </section>
+  <script>
+     function filterCategory() {
+    const selected = document.getElementById("categorySelect").value;
+    alert("Category selected: " + selected);
+    // Implement category filtering logic here
+  }
+  </script>
+
+  <footer id="contact">
+    <p>🌿 Earth & Organics Supermarket | Sustainable Living Starts Here</p>
+    <p>Contact us at <a href="mailto:info@earthorganics.com">info@earthorganics.com</a></p>
+    <a href="admin.html">Admin Login</a>
+  </footer>
+
+</body>
+</html>

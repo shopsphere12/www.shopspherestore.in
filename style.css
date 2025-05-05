@@ -1,0 +1,149 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  
+  body {
+    background-color: #f0f8f5;
+    color: #2f4f4f;
+  }
+  
+  header {
+    background-color: #2e8b57;
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  header .logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+  
+  nav a {
+    color: white;
+    margin-left: 1rem;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  
+  nav a:hover {
+    text-decoration: underline;
+  }
+  
+  .hero {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: url('https://images.unsplash.com/photo-1501004318641-b39e6451bec6') no-repeat center center/cover;
+    color: white;
+  }
+  
+  .hero h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+  
+  .hero .btn {
+    background-color: #2e8b57;
+    color: white;
+    padding: 0.8rem 1.5rem;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: bold;
+  }
+  
+  .categories {
+    padding: 3rem 2rem;
+    text-align: center;
+  }
+  
+  .category-grid {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+  
+  .category {
+    background-color: #e1f5e1;
+    padding: 1.5rem 2rem;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+  
+  .products {
+    padding: 3rem 2rem;
+    text-align: center;
+  }
+  
+  .product-grid {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+  
+  .product-card {
+    background-color: white;
+    border: 1px solid #cfe9d8;
+    padding: 1rem;
+    border-radius: 12px;
+    width: 220px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  
+  .product-card img {
+    width: 100%;
+    border-radius: 8px;
+  }
+  
+  .product-card h3 {
+    margin: 0.5rem 0;
+  }
+  
+  .product-card button {
+    margin-top: 0.5rem;
+    background-color: #2e8b57;
+    color: white;
+    border: none;
+    padding: 0.6rem;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  
+  footer {
+    background-color: #2e8b57;
+    color: white;
+    text-align: center;
+    padding: 2rem;
+    margin-top: 4rem;
+  }
+  .nav-item.dropdown {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 1rem;
+  }
+  
+  .nav-item.dropdown select {
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background-color: #f0fdf4;
+    color: #2e8b57;
+    font-size: 0.95rem;
+  }
+  
+  .nav-label {
+    font-weight: 500;
+    color: #2e8b57;
+    font-size: 0.95rem;
+  }
+    
