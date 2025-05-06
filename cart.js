@@ -33,9 +33,9 @@ function renderCart() {
 
   const cart = JSON.parse(localStorage.getItem('cart')) || [];
   const prices = {
-    "Eco Bag": 1499,
-    "Green Bottle": 999,
-    "Reusable Cup": 1199
+    "Fresh Spinach": 50,
+    "Brown Rice": 80,
+    "Organic Strawberry": 120
   };
 
   cartItems.innerHTML = '';
@@ -70,10 +70,11 @@ function filterProducts() {
 function getCartTotal() {
   const cart = JSON.parse(localStorage.getItem('cart')) || [];
   const prices = {
-    "Eco Bag": 1499,
-    "Green Bottle": 999,
-    "Reusable Cup": 1199
+     "Fresh Spinach": 50,
+    "Brown Rice": 80,
+    "Organic Strawberry": 120
   };
+
 
   let subtotal = 0;
   cart.forEach(item => {
@@ -108,7 +109,7 @@ function checkout() {
     key: "rzp_test_1DP5mmOlF5G5ag", // Razorpay test key
     amount: total * 100,
     currency: "INR",
-    name: "ShopSphere",
+    name: "earthorganics.com",
     description: "Thank you for shopping!",
     handler: function (response) {
       alert("Payment Successful. Payment ID: " + response.razorpay_payment_id);
