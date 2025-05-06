@@ -211,3 +211,25 @@ header {
 .hidden {
   display: none;
 }
+.price-breakdown {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+#subtotal, #tax, #deliveryCharge, #totalAmount {
+  margin: 10px 0;
+}
+
+.add-btn {
+  background-color: #28a745;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.add-btn:hover {
+  background-color: #218838;
+}
