@@ -141,3 +141,74 @@ function checkout() {
   const rzp = new Razorpay(options);
   rzp.open();
 }
+// Calculate price breakdown
+function getCartTotal() {
+  const cart = JSON.parse(localStorage.getItem('cart')) || [];
+  const prices = {
+    "Eco Bag": 1499,
+    "Green Bottle": 999,
+    "Reusable Cup": 1199
+  };
+
+  let subtotal = 0;
+  cart.forEach(item => {
+    subtotal += prices[item] || 0;
+  });
+
+  const tax = 0.18 * subtotal;  // 18% Tax
+  const deliveryCharge = 51;    // Delivery charge
+
+  const total = subtotal + tax + deliveryCharge;
+  
+  return { subtotal, tax, deliveryCharge, total };
+}
+
+// Update the price breakdown in cart.html
+function updatePriceBreakdown() {
+  const { subtotal, tax, deliveryCharge, total } = getCartTotal();
+
+  // Update the DOM with the breakdown
+  document.getElementById("subtotal").innerHTML = `Subtotal: ₹${subtotal.toFixed(2)}`;
+  document.getElementById("tax").innerHTML = `Tax (18%): ₹${tax.toFixed(2)}`;
+  document.getElementById("deliveryCharge").innerHTML = `Delivery Charge: ₹${deliveryCharge}`;
+  document.getElementById("totalAmount").innerHTML = `<strong>Total: ₹${total.toFixed(2)}</strong>`;
+}
+
+// Checkout function
+function checkout() {
+  const { subtotal, tax, deliveryCharge, total } = getCartTotal();
+  
+  if (total === 0) {
+    alert("Your cart is empty.");
+    return;
+  }
+
+  const options = {
+    key: "YOUR_RAZORPAY_KEY_ID", // replace with your Razorpay key
+    amount: total * 100, // Amount in paise (₹1 = 100 paise)
+    currency: "INR",
+    name: "ShopSphere",
+    description: "Thank you for shopping!",
+    handler: function (response) {
+      alert("Payment Successful. Payment ID: " + response.razorpay_payment_id);
+      localStorage.removeItem('cart');
+      renderCart();
+      updateCartCount();
+      updatePriceBreakdown();
+    },
+    theme: {
+      color: "#28a745"
+    }
+  };
+
+  const rzp = new Razorpay(options);
+  rzp.open();
+}
+
+// Run on page load
+document.addEventListener('DOMContentLoaded', () => {
+  updateCartCount();
+  renderCart();
+  updatePriceBreakdown();
+});
+
