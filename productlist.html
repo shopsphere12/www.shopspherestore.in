@@ -3,12 +3,43 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Product Add Animation</title>
+  <title>Product Add with Search Animation</title>
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
       background: #f4f4f4;
+    }
+
+    header {
+      background: #28a745;
+      padding: 20px;
+      text-align: center;
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .search-box {
+      position: relative;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 30px;
+      outline: none;
+      transition: all 0.4s ease;
+      font-size: 16px;
+    }
+
+    .search-box input:focus {
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      transform: scale(1.05);
     }
 
     .container {
@@ -79,13 +110,23 @@
       opacity: 1;
       transform: translateY(0);
     }
+
+    .hidden {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <!-- Example Product Card -->
-    <div class="product-card">
+  <header>
+    <h1>Shop Products</h1>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Search products..." onkeyup="filterProducts()">
+    </div>
+  </header>
+
+  <div class="container" id="productContainer">
+    <div class="product-card" data-name="Product Name">
       <img src="https://via.placeholder.com/200x150" alt="Product Image" />
       <div class="product-info">
         <h4>Product Name</h4>
@@ -94,12 +135,29 @@
       </div>
     </div>
 
-    <!-- Duplicate for more products -->
-    <div class="product-card">
+    <div class="product-card" data-name="Another Product">
       <img src="https://via.placeholder.com/200x150" alt="Product Image" />
       <div class="product-info">
         <h4>Another Product</h4>
         <p>$29.99</p>
+        <button class="add-btn" onclick="showToast('Product added to cart!')">Add to Cart</button>
+      </div>
+    </div>
+
+    <div class="product-card" data-name="Green Bottle">
+      <img src="https://via.placeholder.com/200x150" alt="Product Image" />
+      <div class="product-info">
+        <h4>Green Bottle</h4>
+        <p>$9.99</p>
+        <button class="add-btn" onclick="showToast('Product added to cart!')">Add to Cart</button>
+      </div>
+    </div>
+
+    <div class="product-card" data-name="Eco Bag">
+      <img src="https://via.placeholder.com/200x150" alt="Product Image" />
+      <div class="product-info">
+        <h4>Eco Bag</h4>
+        <p>$14.99</p>
         <button class="add-btn" onclick="showToast('Product added to cart!')">Add to Cart</button>
       </div>
     </div>
@@ -112,12 +170,18 @@
       const toast = document.getElementById("toast");
       toast.textContent = message;
       toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2000);
+    }
 
-      setTimeout(() => {
-        toast.classList.remove("show");
-      }, 2000);
+    function filterProducts() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const cards = document.querySelectorAll('.product-card');
+      cards.forEach(card => {
+        const name = card.getAttribute('data-name').toLowerCase();
+        card.classList.toggle('hidden', !name.includes(query));
+      });
     }
   </script>
+
 </body>
 </html>
-
