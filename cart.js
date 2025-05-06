@@ -60,3 +60,41 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCartCount();
   renderCart();
 });
+function updateCartCount() {
+  const cart = JSON.parse(localStorage.getItem('cart')) || [];
+  const countElem = document.getElementById("cartCount");
+  if (countElem) countElem.textContent = cart.length;
+}
+
+function addToCart(product) {
+  const cart = JSON.parse(localStorage.getItem('cart')) || [];
+  cart.push(product);
+  localStorage.setItem('cart', JSON.stringify(cart));
+  updateCartCount();
+  showToast(`${product} added to cart`);
+}
+
+function removeFromCart(index) {
+  const cart = JSON.parse(localStorage.getItem('cart')) || [];
+  cart.splice(index, 1);
+  localStorage.setItem('cart', JSON.stringify(cart));
+  renderCart();
+  updateCartCount();
+}
+
+function renderCart() {
+  const cartItems = document.getElementById("cartItems");
+  if (!cartItems) return;
+  const cart = JSON.parse(localStorage.getItem('cart')) || [];
+  cartItems.innerHTML = '';
+  cart.forEach((item, index) => {
+    const div = document.createElement("div");
+    div.className = "cart-item";
+    div.innerHTML = `<span>${item}</span>
+      <button class="remove-btn" onclick="removeFromCart(${index})">Remove</button>`;
+    cartItems.appendChild(div);
+  });
+}
+if (window.location.pathname.includes('cart.html')) {
+  renderCart();
+}
