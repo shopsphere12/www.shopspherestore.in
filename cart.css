@@ -192,6 +192,20 @@ header {
     flex-direction: column;
     gap: 10px;
   }
+  .add-btn {
+  background: #007bff;
+  padding: 10px 20px;
+  border-radius: 30px;
+  color: white;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+}
+
+.add-btn:hover {
+  background: #0056b3;
+}
+
 }
 
 .hidden {
