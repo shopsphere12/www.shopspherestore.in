@@ -30,12 +30,21 @@ function removeFromCart(index) {
 function renderCart() {
   const cartItems = document.getElementById("cartItems");
   if (!cartItems) return;
+
   const cart = JSON.parse(localStorage.getItem('cart')) || [];
+  const prices = {
+    "Eco Bag": 1499,
+    "Green Bottle": 999,
+    "Reusable Cup": 1199
+  };
+
   cartItems.innerHTML = '';
   cart.forEach((item, index) => {
+    const price = prices[item] || 0;
     const div = document.createElement("div");
     div.className = "cart-item";
-    div.innerHTML = `<span>${item}</span>
+    div.innerHTML = `
+      <span>${item} - ₹${price}</span>
       <button class="remove-btn" onclick="removeFromCart(${index})">Remove</button>`;
     cartItems.appendChild(div);
   });
@@ -58,7 +67,6 @@ function filterProducts() {
   });
 }
 
-// Pricing Logic
 function getCartTotal() {
   const cart = JSON.parse(localStorage.getItem('cart')) || [];
   const prices = {
@@ -72,7 +80,7 @@ function getCartTotal() {
     subtotal += prices[item] || 0;
   });
 
-  const tax = 0.18 * subtotal;
+  const tax = subtotal * 0.18;
   const deliveryCharge = 51;
   const total = subtotal + tax + deliveryCharge;
 
@@ -89,7 +97,6 @@ function updatePriceBreakdown() {
   }
 }
 
-// Razorpay Checkout
 function checkout() {
   const { total } = getCartTotal();
   if (total === 0) {
