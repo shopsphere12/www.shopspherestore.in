@@ -98,3 +98,46 @@ function renderCart() {
 if (window.location.pathname.includes('cart.html')) {
   renderCart();
 }
+function getCartTotal() {
+  const cart = JSON.parse(localStorage.getItem('cart')) || [];
+  const prices = {
+    "Eco Bag": 1499,
+    "Green Bottle": 999,
+    "Reusable Cup": 1199
+  };
+
+  let total = 0;
+  cart.forEach(item => {
+    total += prices[item] || 0;
+  });
+
+  return total;
+}
+
+function checkout() {
+  const amount = getCartTotal();
+  if (amount === 0) {
+    alert("Your cart is empty.");
+    return;
+  }
+
+  const options = {
+    key: "YOUR_RAZORPAY_KEY_ID", // replace with your Razorpay key
+    amount: amount * 100, // Amount in paise (₹1 = 100 paise)
+    currency: "INR",
+    name: "ShopSphere",
+    description: "Thank you for shopping!",
+    handler: function (response) {
+      alert("Payment Successful. Payment ID: " + response.razorpay_payment_id);
+      localStorage.removeItem('cart');
+      renderCart();
+      updateCartCount();
+    },
+    theme: {
+      color: "#28a745"
+    }
+  };
+
+  const rzp = new Razorpay(options);
+  rzp.open();
+}
