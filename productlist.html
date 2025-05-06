@@ -1,1 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Product Add Animation</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+    }
+
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .product-card {
+      background: #fff;
+      border-radius: 10px;
+      margin: 15px;
+      width: 200px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .product-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+
+    .product-card img {
+      width: 100%;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+    }
+
+    .product-info {
+      padding: 15px;
+      text-align: center;
+    }
+
+    .product-info h4 {
+      margin: 10px 0;
+    }
+
+    .add-btn {
+      background: #28a745;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .add-btn:active {
+      transform: scale(1.1);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: #28a745;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Example Product Card -->
+    <div class="product-card">
+      <img src="https://via.placeholder.com/200x150" alt="Product Image" />
+      <div class="product-info">
+        <h4>Product Name</h4>
+        <p>$19.99</p>
+        <button class="add-btn" onclick="showToast('Product added to cart!')">Add to Cart</button>
+      </div>
+    </div>
+
+    <!-- Duplicate for more products -->
+    <div class="product-card">
+      <img src="https://via.placeholder.com/200x150" alt="Product Image" />
+      <div class="product-info">
+        <h4>Another Product</h4>
+        <p>$29.99</p>
+        <button class="add-btn" onclick="showToast('Product added to cart!')">Add to Cart</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">Product added to cart!</div>
+
+  <script>
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2000);
+    }
+  </script>
+</body>
+</html>
 
