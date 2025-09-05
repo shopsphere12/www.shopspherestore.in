@@ -5,174 +5,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Friend Chat (Discord Clone)</title>
   <style>
-    /* =======================
-       RESET + BASE
-    ======================= */
+    /* ====== Styles (same as before) ====== */
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family: Arial, sans-serif; background:#202225; color:#fff; display:flex; height:100vh; }
     button { cursor:pointer; }
 
-    /* =======================
-       LAYOUT
-    ======================= */
-    .sidebar {
-      width: 250px;
-      background: #2f3136;
-      display: flex;
-      flex-direction: column;
-      padding: 10px;
-    }
-    .sidebar h2 {
-      color: #b9bbbe;
-      margin-bottom: 10px;
-    }
-    .channels, .groups {
-      flex:1;
-      overflow-y:auto;
-      margin-bottom:10px;
-    }
-    .channel, .group {
-      padding: 8px;
-      margin: 3px 0;
-      border-radius:5px;
-      cursor:pointer;
-    }
-    .channel:hover, .group:hover {
-      background:#3a3c42;
-    }
-    .active {
-      background:#5865f2;
-    }
-    .sidebar-footer {
-      display:flex;
-      gap:5px;
-    }
-    .sidebar-footer button {
-      flex:1;
-      padding:6px;
-      border:none;
-      border-radius:5px;
-      background:#5865f2;
-      color:white;
-      font-size:14px;
-    }
-    .sidebar-footer button.ghost {
-      background:#3a3c42;
-    }
+    .sidebar { width:250px; background:#2f3136; display:flex; flex-direction:column; padding:10px; }
+    .sidebar h2 { color:#b9bbbe; margin-bottom:10px; }
+    .channels, .groups { flex:1; overflow-y:auto; margin-bottom:10px; }
+    .channel, .group { padding:8px; margin:3px 0; border-radius:5px; cursor:pointer; }
+    .channel:hover, .group:hover { background:#3a3c42; }
+    .active { background:#5865f2; }
+    .sidebar-footer { display:flex; gap:5px; }
+    .sidebar-footer button { flex:1; padding:6px; border:none; border-radius:5px; background:#5865f2; color:white; font-size:14px; }
+    .sidebar-footer button.ghost { background:#3a3c42; }
 
-    /* =======================
-       CHAT AREA
-    ======================= */
-    .chat {
-      flex:1;
-      display:flex;
-      flex-direction:column;
-      background:#36393f;
-    }
-    .chat-header {
-      background:#2f3136;
-      padding:10px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-    }
-    .chat-messages {
-      flex:1;
-      padding:15px;
-      overflow-y:auto;
-    }
-    .message {
-      margin-bottom:10px;
-    }
+    .chat { flex:1; display:flex; flex-direction:column; background:#36393f; }
+    .chat-header { background:#2f3136; padding:10px; display:flex; justify-content:space-between; align-items:center; }
+    .chat-messages { flex:1; padding:15px; overflow-y:auto; }
+    .message { margin-bottom:10px; }
     .message strong { color:#dcddde; }
-    .chat-input {
-      display:flex;
-      padding:10px;
-      background:#40444b;
-    }
-    .chat-input input {
-      flex:1;
-      padding:10px;
-      border:none;
-      border-radius:5px;
-      outline:none;
-    }
-    .chat-input button {
-      margin-left:10px;
-      padding:10px 15px;
-      border:none;
-      border-radius:5px;
-      background:#5865f2;
-      color:white;
-    }
+    .chat-input { display:flex; padding:10px; background:#40444b; }
+    .chat-input input { flex:1; padding:10px; border:none; border-radius:5px; outline:none; }
+    .chat-input button { margin-left:10px; padding:10px 15px; border:none; border-radius:5px; background:#5865f2; color:white; }
 
-    /* =======================
-       MODALS
-    ======================= */
-    .modal {
-      position:fixed;
-      top:0; left:0;
-      width:100%; height:100%;
-      background:rgba(0,0,0,0.7);
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      z-index:999;
-    }
+    .modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; z-index:999; }
     .hidden { display:none; }
-    .modal .box {
-      background:#2f3136;
-      padding:20px;
-      border-radius:10px;
-      width:300px;
-      text-align:center;
-    }
-    .modal .box input {
-      width:100%;
-      margin:5px 0;
-      padding:8px;
-      border:none;
-      border-radius:5px;
-    }
-    .modal .box button {
-      margin-top:10px;
-      padding:8px 12px;
-      border:none;
-      border-radius:5px;
-      background:#5865f2;
-      color:white;
-    }
+    .modal .box { background:#2f3136; padding:20px; border-radius:10px; width:300px; text-align:center; }
+    .modal .box input { width:100%; margin:5px 0; padding:8px; border:none; border-radius:5px; }
+    .modal .box button { margin-top:10px; padding:8px 12px; border:none; border-radius:5px; background:#5865f2; color:white; }
 
-    /* =======================
-       CALL MODAL
-    ======================= */
-    #callModal .modal-content {
-      background:#2f3136;
-      padding:15px;
-      border-radius:10px;
-      text-align:center;
-      width:500px;
-    }
-    #localVideo, #remoteVideo {
-      width:45%;
-      margin:5px;
-      border-radius:8px;
-      background:black;
-    }
-    #endCallBtn {
-      margin-top:10px;
-      background:red;
-      border:none;
-      padding:8px 15px;
-      border-radius:5px;
-      color:white;
-    }
+    #callModal .modal-content { background:#2f3136; padding:15px; border-radius:10px; text-align:center; width:500px; }
+    #localVideo, #remoteVideo { width:45%; margin:5px; border-radius:8px; background:black; }
+    #endCallBtn { margin-top:10px; background:red; border:none; padding:8px 15px; border-radius:5px; color:white; }
   </style>
 </head>
 <body>
-  <!-- =======================
-       SIDEBAR
-  ======================= -->
+  <!-- Sidebar -->
   <div class="sidebar">
     <h2>Groups</h2>
     <div id="groupsList" class="groups"></div>
@@ -185,9 +54,7 @@
     </div>
   </div>
 
-  <!-- =======================
-       CHAT AREA
-  ======================= -->
+  <!-- Chat -->
   <div class="chat">
     <div class="chat-header">
       <span id="channelName">#general</span>
@@ -200,10 +67,7 @@
     </div>
   </div>
 
-  <!-- =======================
-       MODALS
-  ======================= -->
-  <!-- Create Group -->
+  <!-- Modals -->
   <div id="createGroupModal" class="modal hidden">
     <div class="box">
       <h3>Create Group</h3>
@@ -214,7 +78,6 @@
     </div>
   </div>
 
-  <!-- Join Group -->
   <div id="joinGroupModal" class="modal hidden">
     <div class="box">
       <h3>Join Group</h3>
@@ -225,7 +88,6 @@
     </div>
   </div>
 
-  <!-- Create Channel -->
   <div id="createChannelModal" class="modal hidden">
     <div class="box">
       <h3>Create Channel</h3>
@@ -235,7 +97,6 @@
     </div>
   </div>
 
-  <!-- Call Modal -->
   <div id="callModal" class="modal hidden">
     <div class="modal-content">
       <h3>Voice/Video Call</h3>
@@ -246,30 +107,22 @@
     </div>
   </div>
 
-  <!-- =======================
-       FIREBASE + APP LOGIC
-  ======================= -->
+  <!-- Firebase + Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
     import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
-    // Firebase config
+    // ✅ Correct Firebase config
     const firebaseConfig = {
-      const firebaseConfig = {
-  apiKey: "AIzaSyD0OAOSTic5z4U4obChkOieVLtvhgmIfxU", // <--- You'll get this from the console
-  authDomain: "friend-chat-eaabe.firebaseapp.com",
-  databaseURL: "https://friend-chat-eaabe-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "friend-chat-eaabe",
-  storageBucket: "friend-chat-eaabe.appspot.com",
-  messagingSenderId: "409498465855",
-  appId: "1:409498465855:web:bfec1da1a2f29a1f73aa8a" // <--- You'll get this from the console
-};
-
-// Example of how you'd use it:
-// import { initializeApp } from "firebase/app";
-// const app = initializeApp(firebaseConfig);
-
+      apiKey: "AIzaSyD0OAOSTic5z4U4obChkOieVLtvhgmIfxU",
+      authDomain: "friend-chat-eaabe.firebaseapp.com",
+      databaseURL: "https://friend-chat-eaabe-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "friend-chat-eaabe",
+      storageBucket: "friend-chat-eaabe.appspot.com",
+      messagingSenderId: "409498465855",
+      appId: "1:409498465855:web:bfec1da1a2f29a1f73aa8a"
     };
+
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
@@ -281,7 +134,6 @@
     const sendBtn = document.getElementById("sendBtn");
     const channelName = document.getElementById("channelName");
 
-    // Modal buttons
     const openCreateGroupBtn = document.getElementById("openCreateGroup");
     const createGroupModal = document.getElementById("createGroupModal");
     const confirmGroupCreateBtn = document.getElementById("confirmGroupCreate");
@@ -302,22 +154,17 @@
     const cancelChannelCreateBtn = document.getElementById("cancelChannelCreate");
     const newChannelNameInput = document.getElementById("newChannelName");
 
-    // Current state
+    // State
     let currentGroup = null;
     let currentChannel = "general";
 
-    /* =======================
-       MODAL HELPERS
-    ======================= */
-    function showModal(modal) { modal.classList.remove("hidden"); }
-    function hideModal(modal) { modal.classList.add("hidden"); }
+    // Helpers
+    function showModal(m) { m.classList.remove("hidden"); }
+    function hideModal(m) { m.classList.add("hidden"); }
 
-    /* =======================
-       GROUP CREATION
-    ======================= */
+    // Group create
     openCreateGroupBtn.addEventListener("click", () => showModal(createGroupModal));
     cancelGroupCreateBtn.addEventListener("click", () => hideModal(createGroupModal));
-
     confirmGroupCreateBtn.addEventListener("click", async () => {
       const g = newGroupNameInput.value.trim();
       const pw = newGroupPasswordInput.value.trim();
@@ -328,13 +175,10 @@
       loadGroups();
     });
 
-    /* =======================
-       GROUP JOIN
-    ======================= */
+    // Group join
     openJoinGroupBtn.addEventListener("click", () => showModal(joinGroupModal));
     cancelJoinGroupBtn.addEventListener("click", () => hideModal(joinGroupModal));
-
-    confirmJoinGroupBtn.addEventListener("click", async () => {
+    confirmJoinGroupBtn.addEventListener("click", () => {
       const g = joinGroupNameInput.value.trim();
       const pw = joinGroupPasswordInput.value.trim();
       if (!g || !pw) return;
@@ -344,15 +188,11 @@
           loadChannels(g);
           selectChannel("general");
           hideModal(joinGroupModal);
-        } else {
-          alert("Wrong group or password");
-        }
-      }, { onlyOnce:true });
+        } else alert("Wrong group or password");
+      }, { onlyOnce: true });
     });
 
-    /* =======================
-       CHANNEL CREATION
-    ======================= */
+    // Channel create
     openCreateChannelBtn.addEventListener("click", () => {
       if (!currentGroup) return alert("Join or create a group first");
       showModal(createChannelModal);
@@ -366,9 +206,7 @@
       loadChannels(currentGroup);
     });
 
-    /* =======================
-       LOAD GROUPS & CHANNELS
-    ======================= */
+    // Load groups
     function loadGroups() {
       groupsList.innerHTML = "";
       onValue(ref(db, "groups"), (snapshot) => {
@@ -399,9 +237,7 @@
       });
     }
 
-    /* =======================
-       MESSAGES
-    ======================= */
+    // Messages
     function selectChannel(ch) {
       currentChannel = ch;
       channelName.textContent = "#" + ch;
@@ -429,9 +265,7 @@
       chatInput.value = "";
     });
 
-    /* =======================
-       WEBRTC CALLING
-    ======================= */
+    // ======= WebRTC Calling =======
     let localStream;
     let peerConnection;
     const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
@@ -448,13 +282,22 @@
       localVideo.srcObject = localStream;
       peerConnection = new RTCPeerConnection(servers);
       localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-      peerConnection.ontrack = (event) => { remoteVideo.srcObject = event.streams[0]; };
+      peerConnection.ontrack = (e) => { remoteVideo.srcObject = e.streams[0]; };
       const callPath = `groups/${currentGroup}/calls/${currentChannel}`;
-      peerConnection.onicecandidate = (event) => { if (event.candidate) push(ref(db, `${callPath}/candidates`), event.candidate.toJSON()); };
-      const offer = await peerConnection.createOffer(); await peerConnection.setLocalDescription(offer);
-      await set(ref(db, `${callPath}/offer`), { sdp: offer.sdp, type: offer.type });
-      onValue(ref(db, `${callPath}/answer`), async (snap) => { if (snap.exists() && !peerConnection.currentRemoteDescription) await peerConnection.setRemoteDescription(snap.val()); });
-      onValue(ref(db, `${callPath}/candidates`), (snap) => { snap.forEach(async child => { try { await peerConnection.addIceCandidate(new RTCIceCandidate(child.val())); } catch(e){} }); });
+      peerConnection.onicecandidate = (e) => { if (e.candidate) push(ref(db, `${callPath}/candidates`), e.candidate.toJSON()); };
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      await set(ref(db, `${callPath}/offer`), offer);
+      onValue(ref(db, `${callPath}/answer`), async (snap) => {
+        if (snap.exists() && !peerConnection.currentRemoteDescription) {
+          await peerConnection.setRemoteDescription(snap.val());
+        }
+      });
+      onValue(ref(db, `${callPath}/candidates`), (snap) => {
+        snap.forEach(async child => {
+          try { await peerConnection.addIceCandidate(new RTCIceCandidate(child.val())); } catch(e){}
+        });
+      });
     }
 
     async function joinCall() {
@@ -463,25 +306,42 @@
       localVideo.srcObject = localStream;
       peerConnection = new RTCPeerConnection(servers);
       localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-      peerConnection.ontrack = (event) => { remoteVideo.srcObject = event.streams[0]; };
-      peerConnection.onicecandidate = (event) => { if (event.candidate) push(ref(db, `groups/${currentGroup}/calls/${currentChannel}/candidates`), event.candidate.toJSON()); };
+      peerConnection.ontrack = (e) => { remoteVideo.srcObject = e.streams[0]; };
+      peerConnection.onicecandidate = (e) => { if (e.candidate) push(ref(db, `groups/${currentGroup}/calls/${currentChannel}/candidates`), e.candidate.toJSON()); };
       onValue(ref(db, `groups/${currentGroup}/calls/${currentChannel}/offer`), async (snap) => {
         if (snap.exists() && !peerConnection.currentRemoteDescription) {
           await peerConnection.setRemoteDescription(snap.val());
           const answer = await peerConnection.createAnswer();
           await peerConnection.setLocalDescription(answer);
-          await set(ref(db, `groups/${currentGroup}/calls/${currentChannel}/answer`), { sdp: answer.sdp, type: answer.type });
+          await set(ref(db, `groups/${currentGroup}/calls/${currentChannel}/answer`), answer);
         }
       });
-      onValue(ref(db, `groups/${currentGroup}/calls/${currentChannel}/candidates`), (snap) => { snap.forEach(async child => { try { await peerConnection.addIceCandidate(new RTCIceCandidate(child.val())); } catch(e){} }); });
+      onValue(ref(db, `groups/${currentGroup}/calls/${currentChannel}/candidates`), (snap) => {
+        snap.forEach(async child => {
+          try { await peerConnection.addIceCandidate(new RTCIceCandidate(child.val())); } catch(e){}
+        });
+      });
     }
 
     function endCall() {
       callModal.classList.add("hidden");
       if (peerConnection) peerConnection.close();
       if (localStream) localStream.getTracks().forEach(track => track.stop());
-      remoteVideo.srcObject = null; localVideo.srcObject = null;
+      remoteVideo.srcObject = null;
+      localVideo.srcObject = null;
     }
 
     startCallBtn.addEventListener("click", async () => {
-      const offerRef = ref(db, `groups/${
+      const offerRef = ref(db, `groups/${currentGroup}/calls/${currentChannel}/offer`);
+      onValue(offerRef, (snap) => {
+        if (snap.exists()) joinCall();
+        else startCall();
+      }, { onlyOnce: true });
+    });
+    endCallBtn.addEventListener("click", endCall);
+
+    // Initial load
+    loadGroups();
+  </script>
+</body>
+</html>
