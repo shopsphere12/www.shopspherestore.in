@@ -3,72 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Earth & Organics Supermarket</title>
+  <title>Friend Chat (Local)</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <header>
-    <div class="logo">🌍 Earth & Organics</div>
-    <nav>
-      <a href="#">Home</a>
-      <a href="#products">Products</a>
-      <a href="contact.html">Contact</a>
-    </nav>
-  </header>
-
-  <section class="hero">
-    <h1>Fresh. Organic. Sustainable.</h1>
-    <p>Shop consciously with Earth & Organics Supermarket</p>
-    <a href="productlist.html" class="btn">Shop Now</a>
-  </section>
-
-  <section id="categories" class="categories">
-    <h2>Our Categories</h2>
-    <div class="category-grid">
-      <div class="category">🍎 Fruits</div>
-      <div class="category">🥦 Vegetables</div>
-      <div class="category">🌾 Grains</div>
-      <div class="category">🧴 Natural Care</div>
+  <div class="chat-container">
+    <h2>💬 Friend Chat (Offline Demo)</h2>
+    
+    <div id="login-screen">
+      <input id="nameInput" type="text" placeholder="Enter your name">
+      <button onclick="joinChat()">Join Chat</button>
     </div>
-  </section>
 
-  <section id="products" class="products">
-    <h2>Featured Products</h2>
-    <div class="product-grid">
-      <div class="product-card">
-        <img src="images.jpg" alt="Organic strawberry">
-        <h3>Organic strawberry</h3>
-        <p>₹120 / kg</p>
-        <button>Add to Cart</button>
+    <div id="chat-screen" class="hidden">
+      <div class="chat-header">
+        <span id="userName"></span>
+        <button onclick="leaveChat()">Leave</button>
       </div>
-      <div class="product-card">
-        <img src="71tdN2taTCL.jpg" alt="Fresh Spinach">
-        <h3>Fresh Spinach</h3>
-        <p>₹50 / bunch</p>
-        <button>Add to Cart</button>
-      </div>
-      <div class="product-card">
-        <img src="61eSSpEkpML._AC_.jpg" alt="Brown Rice">
-        <h3>Brown Rice</h3>
-        <p>₹80 / kg</p>
-        <button>Add to Cart</button>
+      <div id="messages"></div>
+      <div class="chat-input">
+        <input id="messageInput" type="text" placeholder="Type a message...">
+        <button onclick="sendMessage()">Send</button>
       </div>
     </div>
-  </section>
-  <script>
-     function filterCategory() {
-    const selected = document.getElementById("categorySelect").value;
-    alert("Category selected: " + selected);
-    // Implement category filtering logic here
-  }
-  </script>
+  </div>
 
-  <footer id="contact">
-    <p>🌿 Earth & Organics Supermarket | Sustainable Living Starts Here</p>
-    <p>Contact us at <a href="mailto:info@earthorganics.com">info@earthorganics.com</a></p>
-    <a href="admin.html">Admin Login</a>
-  </footer>
-
+  <script src="script.js"></script>
 </body>
 </html>
