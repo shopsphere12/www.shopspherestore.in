@@ -61,13 +61,13 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
     import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
-    // ✅ Your Firebase config
+    // ✅ Fixed Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyD0OAOSTic5z4U4obChkOieVLtvhgmIfxU",
       authDomain: "friend-chat-eaabe.firebaseapp.com",
-      databaseURL: "https://friend-chat-eaabe-default-rtdb.firebaseio.com",  <!-- important -->
+      databaseURL: "https://console.firebase.google.com/project/friend-chat-eaabe/database/friend-chat-eaabe-default-rtdb/data/~2F?utm_source=chatgpt.com", // ✅ required
       projectId: "friend-chat-eaabe",
-      storageBucket: "friend-chat-eaabe.firebasestorage.app",
+      storageBucket: "friend-chat-eaabe.appspot.com", // ✅ fixed
       messagingSenderId: "409498465855",
       appId: "1:409498465855:web:bfec1da1a2f29a1f73aa8a",
       measurementId: "G-DHE9SKBE8L"
