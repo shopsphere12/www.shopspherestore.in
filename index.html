@@ -3,120 +3,137 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Friend Chat</title>
+  <title>Discord Style Chat</title>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #36393f;
+      color: #dcddde;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      margin: 0;
     }
 
     .chat-box {
-      background: #fff;
-      padding: 20px;
-      border-radius: 15px;
-      width: 100%;
-      max-width: 400px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      background: #2f3136;
       display: flex;
       flex-direction: column;
+      width: 100%;
+      max-width: 600px;
+      height: 90vh;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
     }
 
-    h2 {
-      margin: 0 0 15px;
+    .chat-header {
+      padding: 12px;
+      background: #202225;
+      font-weight: bold;
       text-align: center;
-      color: #4A4A4A;
+      color: #fff;
     }
 
     #messages {
       flex: 1;
-      height: 350px;
+      padding: 20px;
       overflow-y: auto;
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 15px;
-      background: #f9f9f9;
-      border: 1px solid #ddd;
+      scroll-behavior: smooth;
     }
 
     .message {
-      margin-bottom: 12px;
-      padding: 8px 12px;
-      background: #e3f2fd;
-      border-radius: 10px;
-      max-width: 80%;
-      word-wrap: break-word;
-    }
-
-    .message strong {
-      color: #1976d2;
-    }
-
-    .message span {
-      display: block;
-      font-size: 10px;
-      color: gray;
-      margin-top: 2px;
-      text-align: right;
-    }
-
-    input {
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      outline: none;
-      font-size: 14px;
-    }
-
-    #nameInput {
-      margin-bottom: 12px;
-      width: 100%;
-    }
-
-    .input-row {
       display: flex;
-      gap: 8px;
+      align-items: flex-start;
+      margin-bottom: 15px;
     }
 
-    #messageInput {
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 10px;
+      flex-shrink: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .msg-content {
       flex: 1;
     }
 
-    button {
-      padding: 10px 14px;
-      background: #1976d2;
+    .username {
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .timestamp {
+      font-size: 11px;
+      color: #72767d;
+      margin-left: 6px;
+    }
+
+    .text {
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    .input-area {
+      display: flex;
+      padding: 12px;
+      background: #40444b;
+      border-top: 1px solid #2f3136;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      background: #303339;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .input-area button {
+      margin-left: 10px;
+      padding: 10px 15px;
+      background: #5865f2;
       color: white;
       border: none;
+      border-radius: 5px;
       cursor: pointer;
-      border-radius: 8px;
-      transition: 0.3s;
+      font-weight: bold;
+      transition: 0.2s;
     }
 
-    button:hover {
-      background: #1565c0;
+    .input-area button:hover {
+      background: #4752c4;
     }
 
-    /* Scrollbar styling */
+    /* Scrollbar */
     #messages::-webkit-scrollbar {
-      width: 6px;
+      width: 8px;
     }
     #messages::-webkit-scrollbar-thumb {
-      background: #bbb;
-      border-radius: 10px;
+      background: #202225;
+      border-radius: 4px;
     }
   </style>
 </head>
 <body>
   <div class="chat-box">
-    <h2>💬 Friend Chat</h2>
-    <input id="nameInput" placeholder="Your name">
+    <div class="chat-header">💬 Discord Style Chat</div>
+    <input id="nameInput" placeholder="Enter your username..." style="margin:10px; padding:8px; border-radius:5px; border:none; background:#40444b; color:#fff;">
     <div id="messages"></div>
-    <div class="input-row">
-      <input id="messageInput" placeholder="Type a message...">
+    <div class="input-area">
+      <input id="messageInput" placeholder="Message #general">
       <button id="sendBtn">Send</button>
     </div>
   </div>
@@ -144,6 +161,16 @@
     const messagesDiv = document.getElementById("messages");
     const sendBtn = document.getElementById("sendBtn");
 
+    // Random color for avatars (like Discord)
+    function getColorFromName(name) {
+      const colors = ["#f44336","#e91e63","#9c27b0","#3f51b5","#2196f3","#009688","#4caf50","#ff9800","#795548","#607d8b"];
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return colors[Math.abs(hash) % colors.length];
+    }
+
     function sendMessage() {
       const name = nameInput.value.trim();
       const text = messageInput.value.trim();
@@ -166,9 +193,31 @@
       messagesDiv.innerHTML = "";
       snapshot.forEach(child => {
         const msg = child.val();
+
         const div = document.createElement("div");
         div.className = "message";
-        div.innerHTML = `<strong>${msg.name}:</strong> ${msg.text}<span>${msg.time}</span>`;
+
+        const avatar = document.createElement("div");
+        avatar.className = "avatar";
+        avatar.style.background = getColorFromName(msg.name);
+        avatar.textContent = msg.name.charAt(0).toUpperCase();
+
+        const content = document.createElement("div");
+        content.className = "msg-content";
+
+        const header = document.createElement("div");
+        header.innerHTML = `<span class="username" style="color:${getColorFromName(msg.name)}">${msg.name}</span><span class="timestamp">${msg.time}</span>`;
+
+        const text = document.createElement("div");
+        text.className = "text";
+        text.textContent = msg.text;
+
+        content.appendChild(header);
+        content.appendChild(text);
+
+        div.appendChild(avatar);
+        div.appendChild(content);
+
         messagesDiv.appendChild(div);
       });
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
