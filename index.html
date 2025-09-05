@@ -1,658 +1,487 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Discord-style Channels + Messages (Ready-to-paste)</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Friend Chat (Discord Clone)</title>
   <style>
-    /* ---------- Simple Discord-like styles ---------- */
-    :root{ --bg:#0f1113; --panel:#1f2326; --muted:#9aa4b3; --accent:#5865f2; --text:#e6eef8; }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#0b0f13,#0f1720);color:var(--text)}
-    .app{display:flex;height:100vh;gap:12px;padding:12px}
-    .sidebar{width:240px;background:var(--panel);border-radius:10px;padding:10px;display:flex;flex-direction:column;overflow:hidden}
-    .sidebar .title{font-weight:700;margin-bottom:8px;padding:6px}
-    #channelList{flex:1;overflow:auto;padding:6px}
-    .channel-item{padding:8px 10px;border-radius:8px;color:var(--text);cursor:pointer;margin-bottom:6px}
-    .channel-item:hover{background:rgba(255,255,255,0.02);transform:translateY(-1px)}
-    .channel-item.active{background:linear-gradient(90deg, rgba(88,101,242,0.12), rgba(71,82,196,0.04));color:var(--accent);font-weight:700}
-    .sidebar .footer{padding:8px;border-top:1px solid rgba(255,255,255,0.03);display:flex;gap:6px;justify-content:space-between}
-    .btn, button{background:var(--accent);border:none;color:white;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700}
-    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
-    .chat{flex:1;display:flex;flex-direction:column;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border-radius:10px;padding:0;overflow:hidden}
-    .chat .header{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center}
-    .chat .header .left{display:flex;gap:12px;align-items:center}
-    .group-avatar{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#7289da,#5865f2);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff}
-    .chat .messages{flex:1;padding:16px;overflow:auto;scroll-behavior:smooth;background:transparent}
-    .message{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
-    .msg-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:white;flex-shrink:0}
-    .msg-body{flex:1;min-width:0}
-    .msg-meta{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-    .msg-user{font-weight:700}
-    .msg-time{color:var(--muted);font-size:12px;margin-left:auto}
-    .msg-text{color:#dbe6f7;white-space:pre-wrap}
-    .composer{display:flex;gap:8px;padding:12px;border-top:1px solid rgba(255,255,255,0.03);background:linear-gradient(180deg, rgba(0,0,0,0.02), transparent)}
-    .composer input[type="text"]{flex:1;padding:10px;border-radius:8px;background:#0f1113;border:1px solid rgba(255,255,255,0.03);color:var(--text)}
-    .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:9999}
-    .modal.hidden{display:none}
-    .modal .box{width:320px;background:#0f1113;padding:16px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
-    .modal input{width:100%;padding:10px;border-radius:8px;border:none;background:#131416;color:var(--text);margin-top:8px}
-    .small{padding:6px 10px;border-radius:8px}
-    @media (max-width:900px){ .app{flex-direction:column;padding:8px} .sidebar{width:100%;height:160px;display:flex;flex-direction:row;overflow:auto} .chat{height:calc(100vh - 220px)} }
-  #callModal .modal-content {
-  background: #2f3136;
-  padding: 15px;
-  border-radius: 10px;
-  text-align: center;
-  width: 500px;
-}
-#localVideo, #remoteVideo {
-  width: 45%;
-  margin: 5px;
-  border-radius: 8px;
-  background: black;
-}
+    /* =======================
+       RESET + BASE
+    ======================= */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: Arial, sans-serif; background:#202225; color:#fff; display:flex; height:100vh; }
+    button { cursor:pointer; }
 
+    /* =======================
+       LAYOUT
+    ======================= */
+    .sidebar {
+      width: 250px;
+      background: #2f3136;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+    }
+    .sidebar h2 {
+      color: #b9bbbe;
+      margin-bottom: 10px;
+    }
+    .channels, .groups {
+      flex:1;
+      overflow-y:auto;
+      margin-bottom:10px;
+    }
+    .channel, .group {
+      padding: 8px;
+      margin: 3px 0;
+      border-radius:5px;
+      cursor:pointer;
+    }
+    .channel:hover, .group:hover {
+      background:#3a3c42;
+    }
+    .active {
+      background:#5865f2;
+    }
+    .sidebar-footer {
+      display:flex;
+      gap:5px;
+    }
+    .sidebar-footer button {
+      flex:1;
+      padding:6px;
+      border:none;
+      border-radius:5px;
+      background:#5865f2;
+      color:white;
+      font-size:14px;
+    }
+    .sidebar-footer button.ghost {
+      background:#3a3c42;
+    }
+
+    /* =======================
+       CHAT AREA
+    ======================= */
+    .chat {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      background:#36393f;
+    }
+    .chat-header {
+      background:#2f3136;
+      padding:10px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .chat-messages {
+      flex:1;
+      padding:15px;
+      overflow-y:auto;
+    }
+    .message {
+      margin-bottom:10px;
+    }
+    .message strong { color:#dcddde; }
+    .chat-input {
+      display:flex;
+      padding:10px;
+      background:#40444b;
+    }
+    .chat-input input {
+      flex:1;
+      padding:10px;
+      border:none;
+      border-radius:5px;
+      outline:none;
+    }
+    .chat-input button {
+      margin-left:10px;
+      padding:10px 15px;
+      border:none;
+      border-radius:5px;
+      background:#5865f2;
+      color:white;
+    }
+
+    /* =======================
+       MODALS
+    ======================= */
+    .modal {
+      position:fixed;
+      top:0; left:0;
+      width:100%; height:100%;
+      background:rgba(0,0,0,0.7);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      z-index:999;
+    }
+    .hidden { display:none; }
+    .modal .box {
+      background:#2f3136;
+      padding:20px;
+      border-radius:10px;
+      width:300px;
+      text-align:center;
+    }
+    .modal .box input {
+      width:100%;
+      margin:5px 0;
+      padding:8px;
+      border:none;
+      border-radius:5px;
+    }
+    .modal .box button {
+      margin-top:10px;
+      padding:8px 12px;
+      border:none;
+      border-radius:5px;
+      background:#5865f2;
+      color:white;
+    }
+
+    /* =======================
+       CALL MODAL
+    ======================= */
+    #callModal .modal-content {
+      background:#2f3136;
+      padding:15px;
+      border-radius:10px;
+      text-align:center;
+      width:500px;
+    }
+    #localVideo, #remoteVideo {
+      width:45%;
+      margin:5px;
+      border-radius:8px;
+      background:black;
+    }
+    #endCallBtn {
+      margin-top:10px;
+      background:red;
+      border:none;
+      padding:8px 15px;
+      border-radius:5px;
+      color:white;
+    }
   </style>
 </head>
 <body>
-  <div class="app">
-    <!-- LEFT: channels/sidebar -->
-    <div class="sidebar" role="navigation">
-      <div class="title">Group: <span id="groupLabel">defaultgroup</span></div>
-      <div id="channelList" aria-live="polite"></div>
-      <div class="footer">
-        <button id="openCreateChannel" class="btn">+ Create Channel</button>
-        <button id="openJoinGroup" class="btn ghost">Join</button>
-      </div>
-    </div>
-
-    <!-- CENTER: chat -->
-    <div class="chat" role="main">
-      <div class="header">
-        <div class="left">
-          <div id="groupAvatar" class="group-avatar">G</div>
-          <div>
-            <div id="groupTitle" style="font-weight:800">defaultgroup</div>
-            <div id="channelSubtitle" style="color:var(--muted);font-size:13px">#general</div>
-          </div>
-        </div>
-        <div>
-          <button id="btnInvite" class="btn ghost small">Invite</button>
-          <button id="btnLeave" class="btn ghost small">Leave</button>
-        </div>
-      </div>
-
-      <div id="messages" class="messages" role="log" aria-live="polite">
-        <!-- messages injected here -->
-      </div>
-
-      <div class="composer" id="composer" aria-hidden="true">
-        <input id="displayName" type="text" placeholder="Your name (visible)">
-        <input id="msgInput" type="text" placeholder="Type a message...">
-        <button id="sendBtn" class="btn">Send</button>
-      </div>
+  <!-- =======================
+       SIDEBAR
+  ======================= -->
+  <div class="sidebar">
+    <h2>Groups</h2>
+    <div id="groupsList" class="groups"></div>
+    <h2>Channels</h2>
+    <div id="channelsList" class="channels"></div>
+    <div class="sidebar-footer">
+      <button id="openCreateGroup">+ Group</button>
+      <button id="openJoinGroup" class="ghost">Join</button>
+      <button id="openCreateChannel" class="ghost">+ Channel</button>
     </div>
   </div>
 
-  <!-- Create Channel Modal -->
-  <div id="createChannelModal" class="modal hidden" aria-hidden="true">
+  <!-- =======================
+       CHAT AREA
+  ======================= -->
+  <div class="chat">
+    <div class="chat-header">
+      <span id="channelName">#general</span>
+      <button id="startCallBtn">📞 Call</button>
+    </div>
+    <div id="chatMessages" class="chat-messages"></div>
+    <div class="chat-input">
+      <input id="chatInput" placeholder="Type a message...">
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <!-- =======================
+       MODALS
+  ======================= -->
+  <!-- Create Group -->
+  <div id="createGroupModal" class="modal hidden">
     <div class="box">
-      <h3>Create Channel</h3>
-      <input id="newChannelName" placeholder="Channel name (e.g. random)">
-      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-        <button id="confirmCreate" class="btn">Create</button>
-        <button id="cancelCreate" class="btn ghost">Cancel</button>
-      </div>
+      <h3>Create Group</h3>
+      <input id="newGroupName" placeholder="Group name">
+      <input id="newGroupPassword" placeholder="Password">
+      <button id="confirmGroupCreate">Create</button>
+      <button id="cancelGroupCreate">Cancel</button>
     </div>
   </div>
 
-  <!-- Join Group Modal -->
-  <div id="joinGroupModal" class="modal hidden" aria-hidden="true">
+  <!-- Join Group -->
+  <div id="joinGroupModal" class="modal hidden">
     <div class="box">
       <h3>Join Group</h3>
       <input id="joinGroupName" placeholder="Group name">
-      <input id="joinPassword" placeholder="Password (group must exist)">
-      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-        <button id="confirmJoin" class="btn">Join</button>
-        <button id="cancelJoin" class="btn ghost">Cancel</button>
-      </div>
+      <input id="joinGroupPassword" placeholder="Password">
+      <button id="confirmJoinGroup">Join</button>
+      <button id="cancelJoinGroup">Cancel</button>
     </div>
   </div>
-<div id="createGroupModal" class="modal hidden">
-  <div class="box">
-    <h3>Create Group</h3>
-    <input id="newGroupName" placeholder="Group name">
-    <input id="newGroupPassword" placeholder="Password">
-    <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-      <button id="confirmGroupCreate" class="btn">Create</button>
-      <button id="cancelGroupCreate" class="btn ghost">Cancel</button>
-    </div>
-  </div>
-</div>
-  
-  <!-- Invite modal (simple) -->
-  <div id="inviteModal" class="modal hidden" aria-hidden="true">
+
+  <!-- Create Channel -->
+  <div id="createChannelModal" class="modal hidden">
     <div class="box">
-      <h3>Invite Link</h3>
-      <input id="inviteInput" readonly>
-      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-        <button id="copyInvite" class="btn">Copy</button>
-        <button id="closeInvite" class="btn ghost">Close</button>
-      </div>
+      <h3>Create Channel</h3>
+      <input id="newChannelName" placeholder="Channel name">
+      <button id="confirmChannelCreate">Create</button>
+      <button id="cancelChannelCreate">Cancel</button>
     </div>
   </div>
-  
-<div class="chat-header">
-  <span id="channelName">#general</span>
-  <button id="startCallBtn" style="float:right;background:#5865f2;color:white;border:none;padding:6px 12px;border-radius:5px;cursor:pointer">
-    📞 Call
-  </button>
-</div>
 
-<!-- Video Call Modal -->
-<div id="callModal" class="modal hidden">
-  <div class="modal-content">
-    <h3>Voice/Video Call</h3>
-    <video id="localVideo" autoplay playsinline muted></video>
-    <video id="remoteVideo" autoplay playsinline></video>
-    <br>
-    <button id="endCallBtn" style="background:red">End Call</button>
+  <!-- Call Modal -->
+  <div id="callModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Voice/Video Call</h3>
+      <video id="localVideo" autoplay playsinline muted></video>
+      <video id="remoteVideo" autoplay playsinline></video>
+      <br>
+      <button id="endCallBtn">End Call</button>
+    </div>
   </div>
-</div>
 
-
-  <!-- JS (module) -->
+  <!-- =======================
+       FIREBASE + APP LOGIC
+  ======================= -->
   <script type="module">
-  document.addEventListener('DOMContentLoaded', async () => {
-    // ------------------ CONFIG (replace placeholders if using Firebase) ------------------
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+    import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
+    // Firebase config
     const firebaseConfig = {
-     apiKey: "AIzaSyD0OAOSTic5z4U4obChkOieVLtvhgmIfxU",
-    authDomain: "friend-chat-eaabe.firebaseapp.com",
-    projectId: "friend-chat-eaabe",
-    storageBucket: "friend-chat-eaabe.firebasestorage.app",
-    messagingSenderId: "409498465855",
-    appId: "1:409498465855:web:bfec1da1a2f29a1f73aa8a",
-    measurementId: "G-DHE9SKBE8L"
+      const firebaseConfig = {
+  apiKey: "AIzaSyD0OAOSTic5z4U4obChkOieVLtvhgmIfxU", // <--- You'll get this from the console
+  authDomain: "friend-chat-eaabe.firebaseapp.com",
+  databaseURL: "https://friend-chat-eaabe-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "friend-chat-eaabe",
+  storageBucket: "friend-chat-eaabe.appspot.com",
+  messagingSenderId: "409498465855",
+  appId: "1:409498465855:web:bfec1da1a2f29a1f73aa8a" // <--- You'll get this from the console
+};
+
+// Example of how you'd use it:
+// import { initializeApp } from "firebase/app";
+// const app = initializeApp(firebaseConfig);
+
     };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-    // ------------------ DOM refs ------------------
-    const channelListEl = document.getElementById('channelList');
-    const openCreateChannelBtn = document.getElementById('openCreateChannel');
-    const createChannelModal = document.getElementById('createChannelModal');
-    const confirmCreateBtn = document.getElementById('confirmCreate');
-    const cancelCreateBtn = document.getElementById('cancelCreate');
-    const newChannelNameInput = document.getElementById('newChannelName');
+    // Elements
+    const groupsList = document.getElementById("groupsList");
+    const channelsList = document.getElementById("channelsList");
+    const chatMessages = document.getElementById("chatMessages");
+    const chatInput = document.getElementById("chatInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const channelName = document.getElementById("channelName");
 
-    const joinGroupModal = document.getElementById('joinGroupModal');
-    const openJoinGroupBtn = document.getElementById('openJoinGroup');
-    const confirmJoinBtn = document.getElementById('confirmJoin');
-    const cancelJoinBtn = document.getElementById('cancelJoin');
-    const joinGroupNameInput = document.getElementById('joinGroupName');
-    const joinPasswordInput = document.getElementById('joinPassword');
+    // Modal buttons
+    const openCreateGroupBtn = document.getElementById("openCreateGroup");
+    const createGroupModal = document.getElementById("createGroupModal");
+    const confirmGroupCreateBtn = document.getElementById("confirmGroupCreate");
+    const cancelGroupCreateBtn = document.getElementById("cancelGroupCreate");
+    const newGroupNameInput = document.getElementById("newGroupName");
+    const newGroupPasswordInput = document.getElementById("newGroupPassword");
 
-    const messagesEl = document.getElementById('messages');
-    const sendBtn = document.getElementById('sendBtn');
-    const msgInput = document.getElementById('msgInput');
-    const displayNameInput = document.getElementById('displayName');
-    const composer = document.getElementById('composer');
+    const openJoinGroupBtn = document.getElementById("openJoinGroup");
+    const joinGroupModal = document.getElementById("joinGroupModal");
+    const confirmJoinGroupBtn = document.getElementById("confirmJoinGroup");
+    const cancelJoinGroupBtn = document.getElementById("cancelJoinGroup");
+    const joinGroupNameInput = document.getElementById("joinGroupName");
+    const joinGroupPasswordInput = document.getElementById("joinGroupPassword");
 
-    const groupLabel = document.getElementById('groupLabel');
-    const groupTitle = document.getElementById('groupTitle');
-    const groupAvatar = document.getElementById('groupAvatar');
-    const channelSubtitle = document.getElementById('channelSubtitle');
+    const openCreateChannelBtn = document.getElementById("openCreateChannel");
+    const createChannelModal = document.getElementById("createChannelModal");
+    const confirmChannelCreateBtn = document.getElementById("confirmChannelCreate");
+    const cancelChannelCreateBtn = document.getElementById("cancelChannelCreate");
+    const newChannelNameInput = document.getElementById("newChannelName");
 
-    const inviteModal = document.getElementById('inviteModal');
-    const inviteInput = document.getElementById('inviteInput');
-    const copyInviteBtn = document.getElementById('copyInvite');
-    const closeInviteBtn = document.getElementById('closeInvite');
-    const btnInvite = document.getElementById('btnInvite');
-    const btnLeave = document.getElementById('btnLeave');
+    // Current state
+    let currentGroup = null;
+    let currentChannel = "general";
 
-    // ------------------ STATE ------------------
-    let useFirebase = true;
-    let firebaseDB = null;
-    let currentGroup = localStorage.getItem('fc_last_group') || 'defaultgroup';
-    let currentChannel = 'general';
-    let currentUser = localStorage.getItem('fc_display') || '';
-    displayNameInput.value = currentUser;
-    groupLabel.textContent = currentGroup;
-    groupTitle.textContent = currentGroup;
-    groupAvatar.textContent = currentGroup.charAt(0).toUpperCase();
-    groupAvatar.style.background = '#5865f2';
+    /* =======================
+       MODAL HELPERS
+    ======================= */
+    function showModal(modal) { modal.classList.remove("hidden"); }
+    function hideModal(modal) { modal.classList.add("hidden"); }
 
-    // decide whether Firebase config is real
-    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes('YOUR') || !firebaseConfig.databaseURL || firebaseConfig.databaseURL.includes('YOUR')) {
-      console.warn('Firebase config not set — using localStorage fallback. To enable remote sync, paste real firebaseConfig.');
-      useFirebase = false;
-    }
+    /* =======================
+       GROUP CREATION
+    ======================= */
+    openCreateGroupBtn.addEventListener("click", () => showModal(createGroupModal));
+    cancelGroupCreateBtn.addEventListener("click", () => hideModal(createGroupModal));
 
-    // dynamic import Firebase only if config provided
-    if (useFirebase) {
-      try {
-        const { initializeApp } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js');
-        const dbModule = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js');
-        const app = initializeApp(firebaseConfig);
-        firebaseDB = dbModule.getDatabase(app);
-        console.info('Firebase initialized.');
-      } catch (err) {
-        console.error('Firebase init failed — falling back to localStorage. Error:', err);
-        useFirebase = false;
-      }
-    }
-const openCreateGroupBtn = document.getElementById("openCreateGroup");
-const createGroupModal = document.getElementById("createGroupModal");
-const confirmGroupCreateBtn = document.getElementById("confirmGroupCreate");
-const cancelGroupCreateBtn = document.getElementById("cancelGroupCreate");
-const newGroupNameInput = document.getElementById("newGroupName");
-const newGroupPasswordInput = document.getElementById("newGroupPassword");
-
-openCreateGroupBtn.addEventListener("click", () => showModal(createGroupModal));
-cancelGroupCreateBtn.addEventListener("click", () => hideModal(createGroupModal));
-
-confirmGroupCreateBtn.addEventListener("click", async () => {
-  const g = (newGroupNameInput.value || "").trim();
-  const pw = (newGroupPasswordInput.value || "").trim();
-  if (!g || !pw) return alert("Enter group name and password");
-
-  if (useFirebase && firebaseDB) {
-    const { ref, set } = await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js");
-    await set(ref(firebaseDB, `groups/${g}/password`), pw);
-    await set(ref(firebaseDB, `groups/${g}/channels/general`), true);
-  } else {
-    localStorage.setItem(`fc_channels_${g}`, JSON.stringify(["general"]));
-  }
-
-  currentGroup = g;
-  groupLabel.textContent = g;
-  groupTitle.textContent = g;
-  groupAvatar.textContent = g.charAt(0).toUpperCase();
-  localStorage.setItem("fc_last_group", g);
-
-  hideModal(createGroupModal);
-  loadChannels(g);
-  selectChannel("general");
-});
-    
-    // ------------------ Helpers ------------------
-    function escapeHtml(str = '') {
-      return String(str)
-        .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
-    }
-    function uid() { return 'id' + Math.random().toString(36).slice(2,9); }
-    function colorForName(n) {
-      const colors = ["#f44336","#e91e63","#9c27b0","#673ab7","#3f51b5","#2196f3","#03a9f4","#009688","#4caf50","#ff9800","#795548","#607d8b"];
-      let h = 0; for (let i=0;i<n.length;i++) h = n.charCodeAt(i) + ((h<<5)-h);
-      return colors[Math.abs(h) % colors.length];
-    }
-    function initials(name = '') {
-      const p = name.trim().split(' ').filter(Boolean);
-      if (p.length === 0) return '?';
-      if (p.length ===1) return p[0].slice(0,2).toUpperCase();
-      return (p[0][0]+p[1][0]).toUpperCase();
-    }
-    function showModal(el){ el.classList.remove('hidden'); el.setAttribute('aria-hidden','false'); }
-    function hideModal(el){ el.classList.add('hidden'); el.setAttribute('aria-hidden','true'); }
-
-    // ------------------ Channel UI ------------------
-    function addChannelToDOM(channel) {
-      if (!channelListEl) return;
-      if (channelListEl.querySelector(`[data-channel="${CSS.escape(channel)}"]`)) return;
-      const div = document.createElement('div');
-      div.className = 'channel-item';
-      div.dataset.channel = channel;
-      div.textContent = '# ' + channel;
-      div.addEventListener('click', () => selectChannel(channel));
-      channelListEl.appendChild(div);
-    }
-    function highlightActiveChannel(channel) {
-      document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
-      const el = channelListEl.querySelector(`[data-channel="${CSS.escape(channel)}"]`);
-      if (el) el.classList.add('active');
-    }
-    function selectChannel(channel) {
-      currentChannel = channel;
-      channelSubtitle.textContent = '#' + channel;
-      highlightActiveChannel(channel);
-      loadMessages(currentGroup, channel);
-      localStorage.setItem('fc_last_channel', channel);
-    }
-
-    // ------------------ Persistence (Firebase or localStorage) ------------------
-    async function saveChannel(group, channel) {
-      if (useFirebase && firebaseDB) {
-        const { ref, set } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js');
-        await set(ref(firebaseDB, `groups/${group}/channels/${channel}`), true);
-      } else {
-        // localstorage
-        const key = `fc_channels_${group}`;
-        const arr = JSON.parse(localStorage.getItem(key) || '[]');
-        if (!arr.includes(channel)) { arr.push(channel); localStorage.setItem(key, JSON.stringify(arr)); }
-      }
-    }
-
-    function loadChannels(group) {
-      channelListEl.innerHTML = '';
-      if (useFirebase && firebaseDB) {
-        import('https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js').then(dbModule => {
-          const channelsRef = dbModule.ref(firebaseDB, `groups/${group}/channels`);
-          dbModule.onValue(channelsRef, snapshot => {
-            channelListEl.innerHTML = '';
-            if (!snapshot.exists()) {
-              saveChannel(group, 'general'); // create default
-              addChannelToDOM('general');
-              highlightActiveChannel(currentChannel || 'general');
-              return;
-            }
-            snapshot.forEach(child => addChannelToDOM(child.key));
-            highlightActiveChannel(currentChannel || 'general');
-          });
-        }).catch(e => { console.error('channels load firebase error', e); });
-      } else {
-        // local
-        const arr = JSON.parse(localStorage.getItem(`fc_channels_${group}`) || '[]');
-        if (arr.length === 0) { addChannelToDOM('general'); saveChannel(group,'general'); }
-        else arr.forEach(ch => addChannelToDOM(ch));
-        highlightActiveChannel(currentChannel || 'general');
-      }
-    }
-
-    // ------------------ Messages: load & send ------------------
-    async function sendMessage() {
-      const text = msgInput.value.trim();
-      const username = (displayNameInput.value || 'Guest').trim() || 'Guest';
-      if (!text) return;
-      const msg = { id: uid(), user: username, text, time: new Date().toISOString() };
-      if (useFirebase && firebaseDB) {
-        const { ref, push } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js');
-        await push(ref(firebaseDB, `groups/${currentGroup}/messages/${currentChannel}`), msg);
-      } else {
-        const key = `fc_messages_${currentGroup}_${currentChannel}`;
-        const arr = JSON.parse(localStorage.getItem(key) || '[]');
-        arr.push(msg);
-        localStorage.setItem(key, JSON.stringify(arr));
-        // locally render new message
-        renderMessagesArray(arr);
-      }
-      msgInput.value = '';
-    }
-
-    function renderMessageElement(msg) {
-      const art = document.createElement('div'); art.className = 'message'; art.dataset.id = msg.id || '';
-      const av = document.createElement('div'); av.className = 'msg-avatar'; av.style.background = colorForName(msg.user||'Anon'); av.textContent = initials(msg.user||'A');
-      const body = document.createElement('div'); body.className = 'msg-body';
-      const meta = document.createElement('div'); meta.className = 'msg-meta';
-      const userEl = document.createElement('div'); userEl.className = 'msg-user'; userEl.textContent = msg.user || 'Unknown';
-      const timeEl = document.createElement('div'); timeEl.className = 'msg-time'; timeEl.textContent = new Date(msg.time).toLocaleTimeString();
-      const textEl = document.createElement('div'); textEl.className = 'msg-text'; textEl.innerHTML = escapeHtml(msg.text || '');
-      meta.appendChild(userEl); meta.appendChild(timeEl);
-      body.appendChild(meta); body.appendChild(textEl);
-      art.appendChild(av); art.appendChild(body);
-      return art;
-    }
-
-    function renderMessagesArray(arr) {
-      messagesEl.innerHTML = '';
-      if (!arr || arr.length === 0) {
-        messagesEl.innerHTML = '<div style="color:var(--muted);padding:20px">No messages yet. Say hi 👋</div>';
-        return;
-      }
-      arr.forEach(m => messagesEl.appendChild(renderMessageElement(m)));
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
-
-    function loadMessages(group, channel) {
-      messagesEl.innerHTML = '';
-      if (useFirebase && firebaseDB) {
-        import('https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js').then(dbModule => {
-          const msgsRef = dbModule.ref(firebaseDB, `groups/${group}/messages/${channel}`);
-          dbModule.onValue(msgsRef, snapshot => {
-            const arr = [];
-            if (!snapshot.exists()) { renderMessagesArray([]); return; }
-            snapshot.forEach(child => arr.push(child.val()));
-            renderMessagesArray(arr);
-          });
-        }).catch(e => { console.error('messages load firebase error', e); });
-      } else {
-        const key = `fc_messages_${group}_${channel}`;
-        const arr = JSON.parse(localStorage.getItem(key) || '[]');
-        renderMessagesArray(arr);
-      }
-    }
-
-    // ------------------ Create channel flow (modal) ------------------
-    openCreateChannelBtn.addEventListener('click', () => showModal(createChannelModal));
-    cancelCreateBtn.addEventListener('click', () => hideModal(createChannelModal));
-    confirmCreateBtn.addEventListener('click', async () => {
-      const ch = (newChannelNameInput.value || '').trim();
-      if (!ch) return alert('Enter a channel name');
-      await saveChannel(currentGroup, ch);
-      addChannelToDOM(ch);
-      selectChannel(ch);
-      hideModal(createChannelModal);
+    confirmGroupCreateBtn.addEventListener("click", async () => {
+      const g = newGroupNameInput.value.trim();
+      const pw = newGroupPasswordInput.value.trim();
+      if (!g || !pw) return alert("Enter group name & password");
+      await set(ref(db, `groups/${g}/password`), pw);
+      await set(ref(db, `groups/${g}/channels/general`), true);
+      hideModal(createGroupModal);
+      loadGroups();
     });
 
-    // ------------------ Join group modal (simple password-protected) ------------------
-    openJoinGroupBtn.addEventListener('click', () => showModal(joinGroupModal));
-    cancelJoinBtn.addEventListener('click', () => hideModal(joinGroupModal));
-    confirmJoinBtn.addEventListener('click', async () => {
-      const g = (joinGroupNameInput.value||'').trim();
-      const pw = (joinPasswordInput.value||'').trim();
-      if (!g || !pw) return alert('Enter group and password');
-      // check firebase for password or fallback local check
-      if (useFirebase && firebaseDB) {
-        try {
-          const { ref, get, child } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js');
-          const snap = await get(child(ref(firebaseDB), `groups/${g}/password`));
-          if (!snap.exists()) return alert('Group not found');
-          if (String(snap.val()) !== String(pw)) return alert('Wrong password');
+    /* =======================
+       GROUP JOIN
+    ======================= */
+    openJoinGroupBtn.addEventListener("click", () => showModal(joinGroupModal));
+    cancelJoinGroupBtn.addEventListener("click", () => hideModal(joinGroupModal));
+
+    confirmJoinGroupBtn.addEventListener("click", async () => {
+      const g = joinGroupNameInput.value.trim();
+      const pw = joinGroupPasswordInput.value.trim();
+      if (!g || !pw) return;
+      onValue(ref(db, `groups/${g}/password`), (snap) => {
+        if (snap.exists() && snap.val() === pw) {
           currentGroup = g;
-        } catch (e) { console.error(e); alert('Error checking group'); return; }
-      } else {
-        // local fallback: group must exist in localStorage channels key
-        const exists = JSON.parse(localStorage.getItem(`fc_channels_${g}`) || '[]').length > 0;
-        if (!exists) return alert('Group not found locally');
-        // we don't store password locally -> accept any password for local testing
-        currentGroup = g;
-      }
-      // update UI
-      groupLabel.textContent = currentGroup; groupTitle.textContent = currentGroup; groupAvatar.textContent = currentGroup.charAt(0).toUpperCase();
-      hideModal(joinGroupModal);
+          loadChannels(g);
+          selectChannel("general");
+          hideModal(joinGroupModal);
+        } else {
+          alert("Wrong group or password");
+        }
+      }, { onlyOnce:true });
+    });
+
+    /* =======================
+       CHANNEL CREATION
+    ======================= */
+    openCreateChannelBtn.addEventListener("click", () => {
+      if (!currentGroup) return alert("Join or create a group first");
+      showModal(createChannelModal);
+    });
+    cancelChannelCreateBtn.addEventListener("click", () => hideModal(createChannelModal));
+    confirmChannelCreateBtn.addEventListener("click", async () => {
+      const ch = newChannelNameInput.value.trim();
+      if (!ch) return;
+      await set(ref(db, `groups/${currentGroup}/channels/${ch}`), true);
+      hideModal(createChannelModal);
       loadChannels(currentGroup);
-      selectChannel('general');
-      localStorage.setItem('fc_last_group', currentGroup);
     });
 
-    // ------------------ Invite modal ------------------
-    btnInvite.addEventListener('click', () => {
-      const base = location.origin + location.pathname;
-      const link = `${base}?invite=${encodeURIComponent(currentGroup)}`;
-      inviteInput.value = link;
-      showModal(inviteModal);
-    });
-    copyInviteBtn.addEventListener('click', () => {
-      inviteInput.select(); document.execCommand('copy'); alert('Invite link copied (share password separately)');
-    });
-    closeInviteBtn.addEventListener('click', ()=> hideModal(inviteModal));
-
-    // ------------------ Leave ------------------
-    btnLeave.addEventListener('click', ()=> {
-      if (!confirm('Leave current group?')) return;
-      currentGroup = null;
-      groupLabel.textContent = 'Not in a group';
-      groupTitle.textContent = 'Not in a group';
-      messagesEl.innerHTML = '<div style="color:var(--muted);padding:20px">Left group</div>';
-      composer.setAttribute('aria-hidden','true'); composer.style.display = 'none';
-    });
-
-    // ------------------ Send message wiring ------------------
-    sendBtn.addEventListener('click', async () => {
-      if (!currentGroup) return alert('Join a group first');
-      const name = (displayNameInput.value || 'Guest').trim();
-      if (!name) return alert('Enter your display name');
-      currentUser = name;
-      localStorage.setItem('fc_display', currentUser);
-      composer.setAttribute('aria-hidden','false'); composer.style.display = 'flex';
-      await sendMessage();
-    });
-    msgInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendBtn.click(); });
-
-    // ------------------ Init ------------------
-    // show composer
-    composer.style.display = 'flex';
-    composer.setAttribute('aria-hidden','false');
-
-    // load channels & messages
-    loadChannels(currentGroup);
-    selectChannel(localStorage.getItem('fc_last_channel') || 'general');
-
-    // If URL contains invite param, prefill join modal
-    try {
-      const p = new URLSearchParams(location.search);
-      if (p.has('invite')) {
-        joinGroupNameInput.value = p.get('invite');
-        showModal(joinGroupModal);
-      }
-    } catch(e){ /* ignore */ }
-
-    // Expose for debugging
-    window._fc = { useFirebase, currentGroup, currentChannel };
-  });
-    /* -------- WebRTC Calling -------- */
-let localStream;
-let peerConnection;
-const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
-
-const startCallBtn = document.getElementById("startCallBtn");
-const callModal = document.getElementById("callModal");
-const localVideo = document.getElementById("localVideo");
-const remoteVideo = document.getElementById("remoteVideo");
-const endCallBtn = document.getElementById("endCallBtn");
-
-async function startCall() {
-  callModal.classList.remove("hidden");
-
-  localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-  localVideo.srcObject = localStream;
-
-  peerConnection = new RTCPeerConnection(servers);
-  localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-  peerConnection.ontrack = (event) => {
-    remoteVideo.srcObject = event.streams[0];
-  };
-
-  // Firebase signaling path = currentGroup/currentChannel
-  const callRef = ref(db, `groups/${groupName}/calls/${currentChannel}`);
-
-  // When ICE candidates are found, push them to Firebase
-  peerConnection.onicecandidate = (event) => {
-    if (event.candidate) {
-      push(ref(db, `groups/${groupName}/calls/${currentChannel}/candidates`), event.candidate.toJSON());
-    }
-  };
-
-  // Create Offer
-  const offer = await peerConnection.createOffer();
-  await peerConnection.setLocalDescription(offer);
-
-  // Save offer to Firebase
-  await set(ref(db, `groups/${groupName}/calls/${currentChannel}/offer`), {
-    sdp: offer.sdp,
-    type: offer.type
-  });
-
-  // Listen for Answer
-  onValue(ref(db, `groups/${groupName}/calls/${currentChannel}/answer`), async (snapshot) => {
-    if (snapshot.exists() && !peerConnection.currentRemoteDescription) {
-      const answer = snapshot.val();
-      await peerConnection.setRemoteDescription(answer);
-    }
-  });
-
-  // Listen for Remote ICE Candidates
-  onValue(ref(db, `groups/${groupName}/calls/${currentChannel}/candidates`), (snapshot) => {
-    snapshot.forEach(async child => {
-      try {
-        await peerConnection.addIceCandidate(new RTCIceCandidate(child.val()));
-      } catch (e) {
-        console.error("Error adding ICE", e);
-      }
-    });
-  });
-}
-
-async function joinCall() {
-  callModal.classList.remove("hidden");
-
-  localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-  localVideo.srcObject = localStream;
-
-  peerConnection = new RTCPeerConnection(servers);
-  localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-  peerConnection.ontrack = (event) => {
-    remoteVideo.srcObject = event.streams[0];
-  };
-
-  peerConnection.onicecandidate = (event) => {
-    if (event.candidate) {
-      push(ref(db, `groups/${groupName}/calls/${currentChannel}/candidates`), event.candidate.toJSON());
-    }
-  };
-
-  // Get Offer from Firebase
-  onValue(ref(db, `groups/${groupName}/calls/${currentChannel}/offer`), async (snapshot) => {
-    if (snapshot.exists() && !peerConnection.currentRemoteDescription) {
-      const offer = snapshot.val();
-      await peerConnection.setRemoteDescription(offer);
-
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-
-      await set(ref(db, `groups/${groupName}/calls/${currentChannel}/answer`), {
-        sdp: answer.sdp,
-        type: answer.type
+    /* =======================
+       LOAD GROUPS & CHANNELS
+    ======================= */
+    function loadGroups() {
+      groupsList.innerHTML = "";
+      onValue(ref(db, "groups"), (snapshot) => {
+        groupsList.innerHTML = "";
+        snapshot.forEach(child => {
+          const g = child.key;
+          const div = document.createElement("div");
+          div.className = "group";
+          div.textContent = g;
+          div.onclick = () => { currentGroup = g; loadChannels(g); selectChannel("general"); };
+          groupsList.appendChild(div);
+        });
       });
     }
-  });
 
-  onValue(ref(db, `groups/${groupName}/calls/${currentChannel}/candidates`), (snapshot) => {
-    snapshot.forEach(async child => {
-      try {
-        await peerConnection.addIceCandidate(new RTCIceCandidate(child.val()));
-      } catch (e) {
-        console.error("Error adding ICE", e);
-      }
-    });
-  });
-}
-
-function endCall() {
-  callModal.classList.add("hidden");
-  if (peerConnection) peerConnection.close();
-  if (localStream) localStream.getTracks().forEach(track => track.stop());
-  remoteVideo.srcObject = null;
-  localVideo.srcObject = null;
-}
-
-// Event Bindings
-startCallBtn.addEventListener("click", async () => {
-  // If no call exists, create one, otherwise join
-  const callOfferRef = ref(db, `groups/${groupName}/calls/${currentChannel}/offer`);
-  onValue(callOfferRef, async (snapshot) => {
-    if (!snapshot.exists()) {
-      await startCall();
-    } else {
-      await joinCall();
+    function loadChannels(g) {
+      channelsList.innerHTML = "";
+      onValue(ref(db, `groups/${g}/channels`), (snapshot) => {
+        channelsList.innerHTML = "";
+        snapshot.forEach(child => {
+          const ch = child.key;
+          const div = document.createElement("div");
+          div.className = "channel";
+          div.textContent = "#" + ch;
+          div.onclick = () => selectChannel(ch);
+          channelsList.appendChild(div);
+        });
+      });
     }
-  }, { onlyOnce: true });
-});
 
-endCallBtn.addEventListener("click", endCall);
+    /* =======================
+       MESSAGES
+    ======================= */
+    function selectChannel(ch) {
+      currentChannel = ch;
+      channelName.textContent = "#" + ch;
+      chatMessages.innerHTML = "";
+      onValue(ref(db, `groups/${currentGroup}/channels/${ch}/messages`), (snapshot) => {
+        chatMessages.innerHTML = "";
+        snapshot.forEach(child => {
+          const msg = child.val();
+          const div = document.createElement("div");
+          div.className = "message";
+          div.innerHTML = `<strong>${msg.name}:</strong> ${msg.text}`;
+          chatMessages.appendChild(div);
+        });
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      });
+    }
 
-  </script>
-</body>
-</html>
+    sendBtn.addEventListener("click", () => {
+      const text = chatInput.value.trim();
+      if (!text || !currentGroup || !currentChannel) return;
+      push(ref(db, `groups/${currentGroup}/channels/${currentChannel}/messages`), {
+        name: "User",
+        text
+      });
+      chatInput.value = "";
+    });
 
+    /* =======================
+       WEBRTC CALLING
+    ======================= */
+    let localStream;
+    let peerConnection;
+    const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+
+    const startCallBtn = document.getElementById("startCallBtn");
+    const callModal = document.getElementById("callModal");
+    const localVideo = document.getElementById("localVideo");
+    const remoteVideo = document.getElementById("remoteVideo");
+    const endCallBtn = document.getElementById("endCallBtn");
+
+    async function startCall() {
+      callModal.classList.remove("hidden");
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localVideo.srcObject = localStream;
+      peerConnection = new RTCPeerConnection(servers);
+      localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+      peerConnection.ontrack = (event) => { remoteVideo.srcObject = event.streams[0]; };
+      const callPath = `groups/${currentGroup}/calls/${currentChannel}`;
+      peerConnection.onicecandidate = (event) => { if (event.candidate) push(ref(db, `${callPath}/candidates`), event.candidate.toJSON()); };
+      const offer = await peerConnection.createOffer(); await peerConnection.setLocalDescription(offer);
+      await set(ref(db, `${callPath}/offer`), { sdp: offer.sdp, type: offer.type });
+      onValue(ref(db, `${callPath}/answer`), async (snap) => { if (snap.exists() && !peerConnection.currentRemoteDescription) await peerConnection.setRemoteDescription(snap.val()); });
+      onValue(ref(db, `${callPath}/candidates`), (snap) => { snap.forEach(async child => { try { await peerConnection.addIceCandidate(new RTCIceCandidate(child.val())); } catch(e){} }); });
+    }
+
+    async function joinCall() {
+      callModal.classList.remove("hidden");
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localVideo.srcObject = localStream;
+      peerConnection = new RTCPeerConnection(servers);
+      localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+      peerConnection.ontrack = (event) => { remoteVideo.srcObject = event.streams[0]; };
+      peerConnection.onicecandidate = (event) => { if (event.candidate) push(ref(db, `groups/${currentGroup}/calls/${currentChannel}/candidates`), event.candidate.toJSON()); };
+      onValue(ref(db, `groups/${currentGroup}/calls/${currentChannel}/offer`), async (snap) => {
+        if (snap.exists() && !peerConnection.currentRemoteDescription) {
+          await peerConnection.setRemoteDescription(snap.val());
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+          await set(ref(db, `groups/${currentGroup}/calls/${currentChannel}/answer`), { sdp: answer.sdp, type: answer.type });
+        }
+      });
+      onValue(ref(db, `groups/${currentGroup}/calls/${currentChannel}/candidates`), (snap) => { snap.forEach(async child => { try { await peerConnection.addIceCandidate(new RTCIceCandidate(child.val())); } catch(e){} }); });
+    }
+
+    function endCall() {
+      callModal.classList.add("hidden");
+      if (peerConnection) peerConnection.close();
+      if (localStream) localStream.getTracks().forEach(track => track.stop());
+      remoteVideo.srcObject = null; localVideo.srcObject = null;
+    }
+
+    startCallBtn.addEventListener("click", async () => {
+      const offerRef = ref(db, `groups/${
