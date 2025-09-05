@@ -358,3 +358,4 @@ displayNameInput.addEventListener('change', ()=> localStorage.setItem('fc_displa
 
 /* expose some globals for debugging (optional) */
 window._FC = { openGroup, sendMessage: ()=>btnSend.click(), db };
+
