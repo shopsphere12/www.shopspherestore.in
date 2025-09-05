@@ -3,177 +3,79 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Password Protected Group Chat</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #36393f;
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .container {
-      background: #2f3136;
-      width: 100%;
-      max-width: 600px;
-      height: 90vh;
-      border-radius: 10px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .header {
-      padding: 12px;
-      background: #202225;
-      text-align: center;
-      font-weight: bold;
-    }
-    .screen {
-      flex: 1;
-      display: none;
-      flex-direction: column;
-      padding: 20px;
-      overflow-y: auto;
-    }
-    .active { display: flex; }
-    input, button {
-      padding: 10px;
-      margin: 6px 0;
-      border-radius: 5px;
-      border: none;
-      font-size: 14px;
-    }
-    input { width: 100%; }
-    button {
-      background: #5865f2;
-      color: white;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    button:hover { background: #4752c4; }
-    #messages { flex: 1; overflow-y: auto; margin: 10px 0; }
-    .msg { margin-bottom: 8px; }
-    .input-area {
-      display: flex;
-    }
-    .input-area input { flex: 1; margin-right: 6px; }
-  </style>
+  <title>Discord Clone Chat</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <div class="header">🔒 Group Chat</div>
-
-    <!-- Join/Create Screen -->
-    <div id="loginScreen" class="screen active">
-      <input id="username" placeholder="Your username">
-      <input id="groupName" placeholder="Group name">
-      <input id="groupPassword" type="password" placeholder="Group password">
-      <button id="joinBtn">Join Group</button>
-      <button id="createBtn">Create Group</button>
+  <div id="app">
+    <!-- Sidebar (Servers) -->
+    <div class="server-sidebar">
+      <div class="server-icon" id="createGroupBtn">＋</div>
+      <div class="server-icon" id="joinGroupBtn">⇾</div>
+      <div id="serverList"></div>
     </div>
 
-    <!-- Chat Screen -->
-    <div id="chatScreen" class="screen">
+    <!-- Channel Sidebar -->
+    <div class="channel-sidebar">
+      <div class="channel-header">
+        <h3 id="groupName">Select Group</h3>
+      </div>
+      <div id="channelList"></div>
+      <button id="createChannelBtn">＋ Create Channel</button>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-area">
+      <div class="chat-header">
+        <h2 id="channelName">#general</h2>
+      </div>
       <div id="messages"></div>
-      <div class="input-area">
-        <input id="messageInput" placeholder="Type a message...">
+      <div class="chat-input">
+        <input type="text" id="messageInput" placeholder="Type a message...">
         <button id="sendBtn">Send</button>
       </div>
     </div>
+
+    <!-- User Panel -->
+    <div class="user-panel">
+      <div class="avatar" id="userAvatar"></div>
+      <span id="username">Guest</span>
+      <button id="logoutBtn">Logout</button>
+    </div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-    import { getDatabase, ref, push, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+  <!-- Create Group Modal -->
+  <div id="createGroupModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Create Group</h2>
+      <input type="text" id="newGroupName" placeholder="Group name">
+      <input type="password" id="newGroupPassword" placeholder="Set password">
+      <button id="confirmCreateGroup">Create</button>
+      <button class="closeModal">Cancel</button>
+    </div>
+  </div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyD0OAOSTic5z4U4obChkOieVLtvhgmIfxU",
-      authDomain: "friend-chat-eaabe.firebaseapp.com",
-      databaseURL: "https://friend-chat-eaabe-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "friend-chat-eaabe",
-      storageBucket: "friend-chat-eaabe.appspot.com",
-      messagingSenderId: "409498465855",
-      appId: "1:409498465855:web:bfec1da1a2f29a1f73aa8a",
-      measurementId: "G-DHE9SKBE8L"
-    };
+  <!-- Join Group Modal -->
+  <div id="joinGroupModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Join Group</h2>
+      <input type="text" id="joinGroupName" placeholder="Group name">
+      <input type="password" id="joinGroupPassword" placeholder="Password">
+      <button id="confirmJoinGroup">Join</button>
+      <button class="closeModal">Cancel</button>
+    </div>
+  </div>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+  <!-- Create Channel Modal -->
+  <div id="createChannelModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Create Channel</h2>
+      <input type="text" id="newChannelName" placeholder="Channel name">
+      <button id="confirmCreateChannel">Create</button>
+      <button class="closeModal">Cancel</button>
+    </div>
+  </div>
 
-    const loginScreen = document.getElementById("loginScreen");
-    const chatScreen = document.getElementById("chatScreen");
-    const usernameInput = document.getElementById("username");
-    const groupNameInput = document.getElementById("groupName");
-    const groupPasswordInput = document.getElementById("groupPassword");
-    const joinBtn = document.getElementById("joinBtn");
-    const createBtn = document.getElementById("createBtn");
-    const messagesDiv = document.getElementById("messages");
-    const messageInput = document.getElementById("messageInput");
-    const sendBtn = document.getElementById("sendBtn");
-
-    let currentGroup = null;
-    let currentUser = null;
-
-    async function createGroup() {
-      const group = groupNameInput.value.trim();
-      const password = groupPasswordInput.value.trim();
-      if (!group || !password) return alert("Enter group and password!");
-
-      const groupRef = ref(db, "groups/" + group + "/password");
-      await set(groupRef, password);
-      alert("Group created! You can now join.");
-    }
-
-    async function joinGroup() {
-      const group = groupNameInput.value.trim();
-      const password = groupPasswordInput.value.trim();
-      const name = usernameInput.value.trim();
-      if (!group || !password || !name) return alert("Fill all fields!");
-
-      const snapshot = await get(child(ref(db), "groups/" + group + "/password"));
-      if (!snapshot.exists()) return alert("Group not found!");
-      if (snapshot.val() !== password) return alert("Wrong password!");
-
-      currentGroup = group;
-      currentUser = name;
-      loginScreen.classList.remove("active");
-      chatScreen.classList.add("active");
-      loadMessages();
-    }
-
-    function sendMessage() {
-      if (!messageInput.value.trim()) return;
-      push(ref(db, "groups/" + currentGroup + "/messages"), {
-        name: currentUser,
-        text: messageInput.value,
-        time: new Date().toLocaleTimeString()
-      });
-      messageInput.value = "";
-    }
-
-    function loadMessages() {
-      onValue(ref(db, "groups/" + currentGroup + "/messages"), snapshot => {
-        messagesDiv.innerHTML = "";
-        snapshot.forEach(child => {
-          const msg = child.val();
-          const div = document.createElement("div");
-          div.className = "msg";
-          div.textContent = `[${msg.time}] ${msg.name}: ${msg.text}`;
-          messagesDiv.appendChild(div);
-        });
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      });
-    }
-
-    createBtn.addEventListener("click", createGroup);
-    joinBtn.addEventListener("click", joinGroup);
-    sendBtn.addEventListener("click", sendMessage);
-    messageInput.addEventListener("keypress", e => {
-      if (e.key === "Enter") sendMessage();
-    });
-  </script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
