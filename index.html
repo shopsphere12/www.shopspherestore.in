@@ -56,16 +56,14 @@
     <button id="sendBtn">Send</button>
   </div>
 
-  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
     import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
-    // ✅ Correct Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyD0OAOSTic5z4U4obChkOieVLtvhgmIfxU",
       authDomain: "friend-chat-eaabe.firebaseapp.com",
-      databaseURL: "https://friend-chat-eaabe-default-rtdb.asia-southeast1.firebasedatabase.app", // ✅ exact URL
+      databaseURL: "https://friend-chat-eaabe-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "friend-chat-eaabe",
       storageBucket: "friend-chat-eaabe.appspot.com",
       messagingSenderId: "409498465855",
@@ -73,7 +71,6 @@
       measurementId: "G-DHE9SKBE8L"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
@@ -82,23 +79,24 @@
     const messagesDiv = document.getElementById("messages");
     const sendBtn = document.getElementById("sendBtn");
 
-    // Send a message
     function sendMessage() {
       const name = nameInput.value.trim();
       const text = messageInput.value.trim();
       if (!name || !text) return;
+
       push(ref(db, "messages"), {
-        name: name,
-        text: text,
+        name,
+        text,
         time: new Date().toLocaleTimeString()
       });
       messageInput.value = "";
     }
 
-    // Attach event listener instead of onclick=""
     sendBtn.addEventListener("click", sendMessage);
+    messageInput.addEventListener("keypress", e => {
+      if (e.key === "Enter") sendMessage();
+    });
 
-    // Listen for new messages
     onValue(ref(db, "messages"), snapshot => {
       messagesDiv.innerHTML = "";
       snapshot.forEach(child => {
