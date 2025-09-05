@@ -1,277 +1,447 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Discord-Style Chat</title>
-
-  <!-- Firebase -->
-  <script type="module">
-    // Import Firebase SDK
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
-
-    // TODO: replace with your Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyD0OAOSTic5z4U4obChkOieVLtvhgmIfxU",
-    authDomain: "friend-chat-eaabe.firebaseapp.com",
-    projectId: "friend-chat-eaabe",
-    storageBucket: "friend-chat-eaabe.firebasestorage.app",
-    messagingSenderId: "409498465855",
-    appId: "1:409498465855:web:bfec1da1a2f29a1f73aa8a",
-    measurementId: "G-DHE9SKBE8L"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    /* ---------------- Channel Logic ---------------- */
-    const createChannelBtn = document.getElementById('createChannelBtn');
-    const createChannelModal = document.getElementById('createChannelModal');
-    const confirmCreateChannel = document.getElementById('confirmCreateChannel');
-    const newChannelNameInput = document.getElementById('newChannelName');
-    const channelListEl = document.getElementById('channelList');
-    const groupNameEl = document.getElementById('groupName');
-    const channelHeaderEl = document.getElementById('channelName');
-    const closeModalBtns = document.querySelectorAll('.closeModal');
-
-    let currentGroupName = "defaultgroup"; // Example group
-    let currentChannelName = "general";
-
-    function showCreateChannelModal() {
-      createChannelModal.classList.remove("hidden");
-      newChannelNameInput.focus();
-    }
-    function hideCreateChannelModal() {
-      createChannelModal.classList.add("hidden");
-      newChannelNameInput.value = "";
-    }
-
-    function addChannelToDOM(channelName) {
-      if (channelListEl.querySelector(`[data-channel="${channelName}"]`)) return;
-      const div = document.createElement("div");
-      div.className = "channel-item";
-      div.dataset.channel = channelName;
-      div.textContent = "# " + channelName;
-      div.onclick = () => selectChannel(channelName);
-      channelListEl.appendChild(div);
-    }
-
-    function markActiveChannel(channelName) {
-      channelListEl.querySelectorAll(".channel-item").forEach(el => el.classList.remove("active"));
-      const el = channelListEl.querySelector(`[data-channel="${channelName}"]`);
-      if (el) el.classList.add("active");
-    }
-
-    function selectChannel(channelName) {
-      currentChannelName = channelName;
-      channelHeaderEl.textContent = "#" + channelName;
-      markActiveChannel(channelName);
-      console.log("Switched to channel:", channelName);
-    }
-
-    async function handleCreateChannel() {
-      const channel = newChannelNameInput.value.trim();
-      if (!channel) return alert("Enter a channel name");
-
-      try {
-        const channelsRef = ref(db, `groups/${currentGroupName}/channels/${channel}`);
-        await set(channelsRef, true);
-      } catch (err) {
-        console.error("Firebase error:", err);
-        alert("Error creating channel, check console");
-      }
-
-      addChannelToDOM(channel);
-      selectChannel(channel);
-      hideCreateChannelModal();
-    }
-
-    function preloadChannelsForGroup(groupName) {
-      const channelsRef = ref(db, `groups/${groupName}/channels`);
-      onValue(channelsRef, snapshot => {
-        channelListEl.innerHTML = "";
-        if (!snapshot.exists()) {
-          addChannelToDOM("general");
-          markActiveChannel("general");
-          return;
-        }
-        snapshot.forEach(child => addChannelToDOM(child.key));
-        markActiveChannel(currentChannelName || "general");
-      });
-    }
-
-    // Event bindings
-    createChannelBtn.addEventListener("click", showCreateChannelModal);
-    confirmCreateChannel.addEventListener("click", handleCreateChannel);
-    closeModalBtns.forEach(btn => btn.addEventListener("click", hideCreateChannelModal));
-
-    // Initial load
-    preloadChannelsForGroup(currentGroupName);
-    selectChannel("general");
-  </script>
-
-  <!-- CSS -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Discord-style Channels + Messages (Ready-to-paste)</title>
   <style>
-    body {
-      margin: 0;
-      display: flex;
-      height: 100vh;
-      font-family: Arial, sans-serif;
-      background: #2c2f33;
-      color: white;
-    }
-
-    /* Sidebar */
-    .sidebar {
-      width: 240px;
-      background: #23272a;
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-    }
-
-    .sidebar-header {
-      padding: 15px;
-      font-weight: bold;
-      background: #202225;
-      text-align: center;
-    }
-
-    #channelList {
-      flex: 1;
-      padding: 10px;
-      overflow-y: auto;
-    }
-
-    .channel-item {
-      padding: 8px;
-      cursor: pointer;
-      border-radius: 6px;
-    }
-    .channel-item:hover {
-      background: #2f3136;
-    }
-    .channel-item.active {
-      background: #5865f2;
-      font-weight: bold;
-    }
-
-    .sidebar-footer {
-      padding: 10px;
-      border-top: 1px solid #444;
-      text-align: center;
-    }
-
-    /* Chat area */
-    .chat {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background: #36393f;
-    }
-
-    .chat-header {
-      padding: 10px;
-      background: #2f3136;
-      border-bottom: 1px solid #444;
-      font-weight: bold;
-    }
-
-    .chat-messages {
-      flex: 1;
-      padding: 10px;
-      overflow-y: auto;
-    }
-
-    .chat-input {
-      display: flex;
-      padding: 10px;
-      border-top: 1px solid #444;
-    }
-    .chat-input input {
-      flex: 1;
-      padding: 8px;
-      border-radius: 4px;
-      border: none;
-    }
-    .chat-input button {
-      margin-left: 10px;
-      padding: 8px 12px;
-      border: none;
-      background: #5865f2;
-      color: white;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    /* Modal */
-    .modal {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .modal.hidden { display: none; }
-    .modal-content {
-      background: #2f3136;
-      padding: 20px;
-      border-radius: 8px;
-      width: 300px;
-      text-align: center;
-    }
-    .modal-content input {
-      width: 100%;
-      padding: 8px;
-      margin: 10px 0;
-      border-radius: 4px;
-      border: none;
-    }
-    .modal-content button {
-      margin: 5px;
-      padding: 8px 12px;
-      border: none;
-      border-radius: 4px;
-      background: #5865f2;
-      color: white;
-      cursor: pointer;
-    }
+    /* ---------- Simple Discord-like styles ---------- */
+    :root{ --bg:#0f1113; --panel:#1f2326; --muted:#9aa4b3; --accent:#5865f2; --text:#e6eef8; }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#0b0f13,#0f1720);color:var(--text)}
+    .app{display:flex;height:100vh;gap:12px;padding:12px}
+    .sidebar{width:240px;background:var(--panel);border-radius:10px;padding:10px;display:flex;flex-direction:column;overflow:hidden}
+    .sidebar .title{font-weight:700;margin-bottom:8px;padding:6px}
+    #channelList{flex:1;overflow:auto;padding:6px}
+    .channel-item{padding:8px 10px;border-radius:8px;color:var(--text);cursor:pointer;margin-bottom:6px}
+    .channel-item:hover{background:rgba(255,255,255,0.02);transform:translateY(-1px)}
+    .channel-item.active{background:linear-gradient(90deg, rgba(88,101,242,0.12), rgba(71,82,196,0.04));color:var(--accent);font-weight:700}
+    .sidebar .footer{padding:8px;border-top:1px solid rgba(255,255,255,0.03);display:flex;gap:6px;justify-content:space-between}
+    .btn, button{background:var(--accent);border:none;color:white;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
+    .chat{flex:1;display:flex;flex-direction:column;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border-radius:10px;padding:0;overflow:hidden}
+    .chat .header{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center}
+    .chat .header .left{display:flex;gap:12px;align-items:center}
+    .group-avatar{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#7289da,#5865f2);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff}
+    .chat .messages{flex:1;padding:16px;overflow:auto;scroll-behavior:smooth;background:transparent}
+    .message{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
+    .msg-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:white;flex-shrink:0}
+    .msg-body{flex:1;min-width:0}
+    .msg-meta{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+    .msg-user{font-weight:700}
+    .msg-time{color:var(--muted);font-size:12px;margin-left:auto}
+    .msg-text{color:#dbe6f7;white-space:pre-wrap}
+    .composer{display:flex;gap:8px;padding:12px;border-top:1px solid rgba(255,255,255,0.03);background:linear-gradient(180deg, rgba(0,0,0,0.02), transparent)}
+    .composer input[type="text"]{flex:1;padding:10px;border-radius:8px;background:#0f1113;border:1px solid rgba(255,255,255,0.03);color:var(--text)}
+    .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:9999}
+    .modal.hidden{display:none}
+    .modal .box{width:320px;background:#0f1113;padding:16px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+    .modal input{width:100%;padding:10px;border-radius:8px;border:none;background:#131416;color:var(--text);margin-top:8px}
+    .small{padding:6px 10px;border-radius:8px}
+    @media (max-width:900px){ .app{flex-direction:column;padding:8px} .sidebar{width:100%;height:160px;display:flex;flex-direction:row;overflow:auto} .chat{height:calc(100vh - 220px)} }
   </style>
 </head>
 <body>
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="sidebar-header">Group: <span id="groupName">defaultgroup</span></div>
-    <div id="channelList"></div>
-    <div class="sidebar-footer">
-      <button id="createChannelBtn">+ Create Channel</button>
+  <div class="app">
+    <!-- LEFT: channels/sidebar -->
+    <div class="sidebar" role="navigation">
+      <div class="title">Group: <span id="groupLabel">defaultgroup</span></div>
+      <div id="channelList" aria-live="polite"></div>
+      <div class="footer">
+        <button id="openCreateChannel" class="btn">+ Create Channel</button>
+        <button id="openJoinGroup" class="btn ghost">Join</button>
+      </div>
+    </div>
+
+    <!-- CENTER: chat -->
+    <div class="chat" role="main">
+      <div class="header">
+        <div class="left">
+          <div id="groupAvatar" class="group-avatar">G</div>
+          <div>
+            <div id="groupTitle" style="font-weight:800">defaultgroup</div>
+            <div id="channelSubtitle" style="color:var(--muted);font-size:13px">#general</div>
+          </div>
+        </div>
+        <div>
+          <button id="btnInvite" class="btn ghost small">Invite</button>
+          <button id="btnLeave" class="btn ghost small">Leave</button>
+        </div>
+      </div>
+
+      <div id="messages" class="messages" role="log" aria-live="polite">
+        <!-- messages injected here -->
+      </div>
+
+      <div class="composer" id="composer" aria-hidden="true">
+        <input id="displayName" type="text" placeholder="Your name (visible)">
+        <input id="msgInput" type="text" placeholder="Type a message...">
+        <button id="sendBtn" class="btn">Send</button>
+      </div>
     </div>
   </div>
 
-  <!-- Chat -->
-  <div class="chat">
-    <div class="chat-header"><span id="channelName">#general</span></div>
-    <div class="chat-messages" id="chatMessages">
-      <p>Welcome to the channel!</p>
-    </div>
-    <div class="chat-input">
-      <input type="text" placeholder="Type a message...">
-      <button>Send</button>
+  <!-- Create Channel Modal -->
+  <div id="createChannelModal" class="modal hidden" aria-hidden="true">
+    <div class="box">
+      <h3>Create Channel</h3>
+      <input id="newChannelName" placeholder="Channel name (e.g. random)">
+      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+        <button id="confirmCreate" class="btn">Create</button>
+        <button id="cancelCreate" class="btn ghost">Cancel</button>
+      </div>
     </div>
   </div>
 
-  <!-- Modal -->
-  <div id="createChannelModal" class="modal hidden">
-    <div class="modal-content">
-      <h2>Create Channel</h2>
-      <input type="text" id="newChannelName" placeholder="Channel name">
-      <button id="confirmCreateChannel">Create</button>
-      <button class="closeModal">Cancel</button>
+  <!-- Join Group Modal -->
+  <div id="joinGroupModal" class="modal hidden" aria-hidden="true">
+    <div class="box">
+      <h3>Join Group</h3>
+      <input id="joinGroupName" placeholder="Group name">
+      <input id="joinPassword" placeholder="Password (group must exist)">
+      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+        <button id="confirmJoin" class="btn">Join</button>
+        <button id="cancelJoin" class="btn ghost">Cancel</button>
+      </div>
     </div>
   </div>
+
+  <!-- Invite modal (simple) -->
+  <div id="inviteModal" class="modal hidden" aria-hidden="true">
+    <div class="box">
+      <h3>Invite Link</h3>
+      <input id="inviteInput" readonly>
+      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+        <button id="copyInvite" class="btn">Copy</button>
+        <button id="closeInvite" class="btn ghost">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS (module) -->
+  <script type="module">
+  document.addEventListener('DOMContentLoaded', async () => {
+    // ------------------ CONFIG (replace placeholders if using Firebase) ------------------
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      databaseURL: "YOUR_DATABASE_URL", // e.g. https://your-project-default-rtdb.asia-southeast1.firebasedatabase.app
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_BUCKET",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // ------------------ DOM refs ------------------
+    const channelListEl = document.getElementById('channelList');
+    const openCreateChannelBtn = document.getElementById('openCreateChannel');
+    const createChannelModal = document.getElementById('createChannelModal');
+    const confirmCreateBtn = document.getElementById('confirmCreate');
+    const cancelCreateBtn = document.getElementById('cancelCreate');
+    const newChannelNameInput = document.getElementById('newChannelName');
+
+    const joinGroupModal = document.getElementById('joinGroupModal');
+    const openJoinGroupBtn = document.getElementById('openJoinGroup');
+    const confirmJoinBtn = document.getElementById('confirmJoin');
+    const cancelJoinBtn = document.getElementById('cancelJoin');
+    const joinGroupNameInput = document.getElementById('joinGroupName');
+    const joinPasswordInput = document.getElementById('joinPassword');
+
+    const messagesEl = document.getElementById('messages');
+    const sendBtn = document.getElementById('sendBtn');
+    const msgInput = document.getElementById('msgInput');
+    const displayNameInput = document.getElementById('displayName');
+    const composer = document.getElementById('composer');
+
+    const groupLabel = document.getElementById('groupLabel');
+    const groupTitle = document.getElementById('groupTitle');
+    const groupAvatar = document.getElementById('groupAvatar');
+    const channelSubtitle = document.getElementById('channelSubtitle');
+
+    const inviteModal = document.getElementById('inviteModal');
+    const inviteInput = document.getElementById('inviteInput');
+    const copyInviteBtn = document.getElementById('copyInvite');
+    const closeInviteBtn = document.getElementById('closeInvite');
+    const btnInvite = document.getElementById('btnInvite');
+    const btnLeave = document.getElementById('btnLeave');
+
+    // ------------------ STATE ------------------
+    let useFirebase = true;
+    let firebaseDB = null;
+    let currentGroup = localStorage.getItem('fc_last_group') || 'defaultgroup';
+    let currentChannel = 'general';
+    let currentUser = localStorage.getItem('fc_display') || '';
+    displayNameInput.value = currentUser;
+    groupLabel.textContent = currentGroup;
+    groupTitle.textContent = currentGroup;
+    groupAvatar.textContent = currentGroup.charAt(0).toUpperCase();
+    groupAvatar.style.background = '#5865f2';
+
+    // decide whether Firebase config is real
+    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes('YOUR') || !firebaseConfig.databaseURL || firebaseConfig.databaseURL.includes('YOUR')) {
+      console.warn('Firebase config not set — using localStorage fallback. To enable remote sync, paste real firebaseConfig.');
+      useFirebase = false;
+    }
+
+    // dynamic import Firebase only if config provided
+    if (useFirebase) {
+      try {
+        const { initializeApp } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js');
+        const dbModule = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js');
+        const app = initializeApp(firebaseConfig);
+        firebaseDB = dbModule.getDatabase(app);
+        console.info('Firebase initialized.');
+      } catch (err) {
+        console.error('Firebase init failed — falling back to localStorage. Error:', err);
+        useFirebase = false;
+      }
+    }
+
+    // ------------------ Helpers ------------------
+    function escapeHtml(str = '') {
+      return String(str)
+        .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+    }
+    function uid() { return 'id' + Math.random().toString(36).slice(2,9); }
+    function colorForName(n) {
+      const colors = ["#f44336","#e91e63","#9c27b0","#673ab7","#3f51b5","#2196f3","#03a9f4","#009688","#4caf50","#ff9800","#795548","#607d8b"];
+      let h = 0; for (let i=0;i<n.length;i++) h = n.charCodeAt(i) + ((h<<5)-h);
+      return colors[Math.abs(h) % colors.length];
+    }
+    function initials(name = '') {
+      const p = name.trim().split(' ').filter(Boolean);
+      if (p.length === 0) return '?';
+      if (p.length ===1) return p[0].slice(0,2).toUpperCase();
+      return (p[0][0]+p[1][0]).toUpperCase();
+    }
+    function showModal(el){ el.classList.remove('hidden'); el.setAttribute('aria-hidden','false'); }
+    function hideModal(el){ el.classList.add('hidden'); el.setAttribute('aria-hidden','true'); }
+
+    // ------------------ Channel UI ------------------
+    function addChannelToDOM(channel) {
+      if (!channelListEl) return;
+      if (channelListEl.querySelector(`[data-channel="${CSS.escape(channel)}"]`)) return;
+      const div = document.createElement('div');
+      div.className = 'channel-item';
+      div.dataset.channel = channel;
+      div.textContent = '# ' + channel;
+      div.addEventListener('click', () => selectChannel(channel));
+      channelListEl.appendChild(div);
+    }
+    function highlightActiveChannel(channel) {
+      document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+      const el = channelListEl.querySelector(`[data-channel="${CSS.escape(channel)}"]`);
+      if (el) el.classList.add('active');
+    }
+    function selectChannel(channel) {
+      currentChannel = channel;
+      channelSubtitle.textContent = '#' + channel;
+      highlightActiveChannel(channel);
+      loadMessages(currentGroup, channel);
+      localStorage.setItem('fc_last_channel', channel);
+    }
+
+    // ------------------ Persistence (Firebase or localStorage) ------------------
+    async function saveChannel(group, channel) {
+      if (useFirebase && firebaseDB) {
+        const { ref, set } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js');
+        await set(ref(firebaseDB, `groups/${group}/channels/${channel}`), true);
+      } else {
+        // localstorage
+        const key = `fc_channels_${group}`;
+        const arr = JSON.parse(localStorage.getItem(key) || '[]');
+        if (!arr.includes(channel)) { arr.push(channel); localStorage.setItem(key, JSON.stringify(arr)); }
+      }
+    }
+
+    function loadChannels(group) {
+      channelListEl.innerHTML = '';
+      if (useFirebase && firebaseDB) {
+        import('https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js').then(dbModule => {
+          const channelsRef = dbModule.ref(firebaseDB, `groups/${group}/channels`);
+          dbModule.onValue(channelsRef, snapshot => {
+            channelListEl.innerHTML = '';
+            if (!snapshot.exists()) {
+              saveChannel(group, 'general'); // create default
+              addChannelToDOM('general');
+              highlightActiveChannel(currentChannel || 'general');
+              return;
+            }
+            snapshot.forEach(child => addChannelToDOM(child.key));
+            highlightActiveChannel(currentChannel || 'general');
+          });
+        }).catch(e => { console.error('channels load firebase error', e); });
+      } else {
+        // local
+        const arr = JSON.parse(localStorage.getItem(`fc_channels_${group}`) || '[]');
+        if (arr.length === 0) { addChannelToDOM('general'); saveChannel(group,'general'); }
+        else arr.forEach(ch => addChannelToDOM(ch));
+        highlightActiveChannel(currentChannel || 'general');
+      }
+    }
+
+    // ------------------ Messages: load & send ------------------
+    async function sendMessage() {
+      const text = msgInput.value.trim();
+      const username = (displayNameInput.value || 'Guest').trim() || 'Guest';
+      if (!text) return;
+      const msg = { id: uid(), user: username, text, time: new Date().toISOString() };
+      if (useFirebase && firebaseDB) {
+        const { ref, push } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js');
+        await push(ref(firebaseDB, `groups/${currentGroup}/messages/${currentChannel}`), msg);
+      } else {
+        const key = `fc_messages_${currentGroup}_${currentChannel}`;
+        const arr = JSON.parse(localStorage.getItem(key) || '[]');
+        arr.push(msg);
+        localStorage.setItem(key, JSON.stringify(arr));
+        // locally render new message
+        renderMessagesArray(arr);
+      }
+      msgInput.value = '';
+    }
+
+    function renderMessageElement(msg) {
+      const art = document.createElement('div'); art.className = 'message'; art.dataset.id = msg.id || '';
+      const av = document.createElement('div'); av.className = 'msg-avatar'; av.style.background = colorForName(msg.user||'Anon'); av.textContent = initials(msg.user||'A');
+      const body = document.createElement('div'); body.className = 'msg-body';
+      const meta = document.createElement('div'); meta.className = 'msg-meta';
+      const userEl = document.createElement('div'); userEl.className = 'msg-user'; userEl.textContent = msg.user || 'Unknown';
+      const timeEl = document.createElement('div'); timeEl.className = 'msg-time'; timeEl.textContent = new Date(msg.time).toLocaleTimeString();
+      const textEl = document.createElement('div'); textEl.className = 'msg-text'; textEl.innerHTML = escapeHtml(msg.text || '');
+      meta.appendChild(userEl); meta.appendChild(timeEl);
+      body.appendChild(meta); body.appendChild(textEl);
+      art.appendChild(av); art.appendChild(body);
+      return art;
+    }
+
+    function renderMessagesArray(arr) {
+      messagesEl.innerHTML = '';
+      if (!arr || arr.length === 0) {
+        messagesEl.innerHTML = '<div style="color:var(--muted);padding:20px">No messages yet. Say hi 👋</div>';
+        return;
+      }
+      arr.forEach(m => messagesEl.appendChild(renderMessageElement(m)));
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function loadMessages(group, channel) {
+      messagesEl.innerHTML = '';
+      if (useFirebase && firebaseDB) {
+        import('https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js').then(dbModule => {
+          const msgsRef = dbModule.ref(firebaseDB, `groups/${group}/messages/${channel}`);
+          dbModule.onValue(msgsRef, snapshot => {
+            const arr = [];
+            if (!snapshot.exists()) { renderMessagesArray([]); return; }
+            snapshot.forEach(child => arr.push(child.val()));
+            renderMessagesArray(arr);
+          });
+        }).catch(e => { console.error('messages load firebase error', e); });
+      } else {
+        const key = `fc_messages_${group}_${channel}`;
+        const arr = JSON.parse(localStorage.getItem(key) || '[]');
+        renderMessagesArray(arr);
+      }
+    }
+
+    // ------------------ Create channel flow (modal) ------------------
+    openCreateChannelBtn.addEventListener('click', () => showModal(createChannelModal));
+    cancelCreateBtn.addEventListener('click', () => hideModal(createChannelModal));
+    confirmCreateBtn.addEventListener('click', async () => {
+      const ch = (newChannelNameInput.value || '').trim();
+      if (!ch) return alert('Enter a channel name');
+      await saveChannel(currentGroup, ch);
+      addChannelToDOM(ch);
+      selectChannel(ch);
+      hideModal(createChannelModal);
+    });
+
+    // ------------------ Join group modal (simple password-protected) ------------------
+    openJoinGroupBtn.addEventListener('click', () => showModal(joinGroupModal));
+    cancelJoinBtn.addEventListener('click', () => hideModal(joinGroupModal));
+    confirmJoinBtn.addEventListener('click', async () => {
+      const g = (joinGroupNameInput.value||'').trim();
+      const pw = (joinPasswordInput.value||'').trim();
+      if (!g || !pw) return alert('Enter group and password');
+      // check firebase for password or fallback local check
+      if (useFirebase && firebaseDB) {
+        try {
+          const { ref, get, child } = await import('https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js');
+          const snap = await get(child(ref(firebaseDB), `groups/${g}/password`));
+          if (!snap.exists()) return alert('Group not found');
+          if (String(snap.val()) !== String(pw)) return alert('Wrong password');
+          currentGroup = g;
+        } catch (e) { console.error(e); alert('Error checking group'); return; }
+      } else {
+        // local fallback: group must exist in localStorage channels key
+        const exists = JSON.parse(localStorage.getItem(`fc_channels_${g}`) || '[]').length > 0;
+        if (!exists) return alert('Group not found locally');
+        // we don't store password locally -> accept any password for local testing
+        currentGroup = g;
+      }
+      // update UI
+      groupLabel.textContent = currentGroup; groupTitle.textContent = currentGroup; groupAvatar.textContent = currentGroup.charAt(0).toUpperCase();
+      hideModal(joinGroupModal);
+      loadChannels(currentGroup);
+      selectChannel('general');
+      localStorage.setItem('fc_last_group', currentGroup);
+    });
+
+    // ------------------ Invite modal ------------------
+    btnInvite.addEventListener('click', () => {
+      const base = location.origin + location.pathname;
+      const link = `${base}?invite=${encodeURIComponent(currentGroup)}`;
+      inviteInput.value = link;
+      showModal(inviteModal);
+    });
+    copyInviteBtn.addEventListener('click', () => {
+      inviteInput.select(); document.execCommand('copy'); alert('Invite link copied (share password separately)');
+    });
+    closeInviteBtn.addEventListener('click', ()=> hideModal(inviteModal));
+
+    // ------------------ Leave ------------------
+    btnLeave.addEventListener('click', ()=> {
+      if (!confirm('Leave current group?')) return;
+      currentGroup = null;
+      groupLabel.textContent = 'Not in a group';
+      groupTitle.textContent = 'Not in a group';
+      messagesEl.innerHTML = '<div style="color:var(--muted);padding:20px">Left group</div>';
+      composer.setAttribute('aria-hidden','true'); composer.style.display = 'none';
+    });
+
+    // ------------------ Send message wiring ------------------
+    sendBtn.addEventListener('click', async () => {
+      if (!currentGroup) return alert('Join a group first');
+      const name = (displayNameInput.value || 'Guest').trim();
+      if (!name) return alert('Enter your display name');
+      currentUser = name;
+      localStorage.setItem('fc_display', currentUser);
+      composer.setAttribute('aria-hidden','false'); composer.style.display = 'flex';
+      await sendMessage();
+    });
+    msgInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendBtn.click(); });
+
+    // ------------------ Init ------------------
+    // show composer
+    composer.style.display = 'flex';
+    composer.setAttribute('aria-hidden','false');
+
+    // load channels & messages
+    loadChannels(currentGroup);
+    selectChannel(localStorage.getItem('fc_last_channel') || 'general');
+
+    // If URL contains invite param, prefill join modal
+    try {
+      const p = new URLSearchParams(location.search);
+      if (p.has('invite')) {
+        joinGroupNameInput.value = p.get('invite');
+        showModal(joinGroupModal);
+      }
+    } catch(e){ /* ignore */ }
+
+    // Expose for debugging
+    window._fc = { useFirebase, currentGroup, currentChannel };
+  });
+  </script>
 </body>
 </html>
-
