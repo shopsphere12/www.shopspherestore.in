@@ -1,462 +1,449 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Password Protected Group Chat (with avatars & media & voice notes)</title>
+  <title>Friend Chat — Groups, Avatars, Media, Voice Notes</title>
   <style>
-    /* Full styles (kept large, readable) */
-    * { box-sizing: border-box; }
-    html,body { height:100%; margin:0; font-family: Arial, Helvetica, sans-serif; background:#2f3136; color:#e6eef8; }
-    .center-wrap { display:flex; align-items:center; justify-content:center; height:100vh; padding:16px; }
-    .container { width:100%; max-width:760px; height:90vh; background:#202225; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 8px 30px rgba(0,0,0,0.5); }
-    .header { padding:12px 16px; background:#111214; font-weight:700; color:#dbe7ff; display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    .header .title { font-size:18px; }
-    .body { flex:1; display:flex; gap:12px; padding:12px; }
-    .panel { background:#2b2f33; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px; }
-    .left { width:320px; min-width:240px; max-width:360px; }
-    .right { flex:1; display:flex; flex-direction:column; }
-    /* login area */
-    .login-input { width:100%; padding:10px; border-radius:8px; border:none; outline:none; background:#1f2225; color:#f0f5ff; }
-    .login-actions { display:flex; gap:8px; margin-top:6px; }
-    .btn { background:#5865f2; color:white; border:none; padding:9px 12px; border-radius:8px; font-weight:700; cursor:pointer; }
-    .btn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.06); }
-    /* messages */
-    #messages { flex:1; overflow:auto; display:flex; flex-direction:column; gap:8px; padding:8px; }
-    .msg { display:flex; gap:10px; align-items:flex-start; background:#101214; border-radius:8px; padding:10px; border:1px solid rgba(255,255,255,0.02); }
-    .avatar { width:44px; height:44px; border-radius:50%; object-fit:cover; flex-shrink:0; }
-    .msg-body { flex:1; display:flex; flex-direction:column; gap:6px; }
-    .msg-meta { display:flex; gap:8px; align-items:center; }
-    .msg-name { font-weight:800; color:#9ad3ff; }
-    .msg-time { color:#97a0ad; font-size:12px; margin-left:auto; }
-    .msg-text { color:#d8e9ff; }
-    .msg-media { max-width:360px; border-radius:8px; }
-    /* composer */
-    .composer { display:flex; flex-direction:column; gap:8px; padding-top:8px; }
-    .composer-row { display:flex; gap:8px; align-items:center; }
-    .composer-input { flex:1; padding:10px; border-radius:8px; border:none; background:#131417; color:#eaf4ff; }
-    .file-buttons { display:flex; gap:8px; }
-    .micro-indicator { font-size:12px; color:#ffd38a; margin-left:6px; }
-    /* small helpers */
-    .muted { color:#97a0ad; font-size:13px; }
-    .small { font-size:13px; padding:6px 10px; border-radius:8px; }
-    .disabled { opacity:0.5; pointer-events:none; }
-    @media (max-width:880px) {
-      .body { flex-direction:column; }
-      .left { width:100%; max-width:100%; }
-    }
+    /* Styles (full, readable) */
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:#2f3336;color:#e9f0fb}
+    .app{display:flex;height:100vh;padding:12px;gap:12px}
+    .sidebar{width:300px;background:#23272a;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
+    .sidebar h3{margin:0;color:#bfc8d7}
+    .groupsList{flex:1;overflow:auto;padding:6px;display:flex;flex-direction:column;gap:6px}
+    .groupItem{padding:8px;border-radius:8px;background:transparent;cursor:pointer;color:#dbe7ff}
+    .groupItem:hover{background:rgba(255,255,255,0.03)}
+    .activeGroup{background:linear-gradient(90deg,#5865f2, #4854d8);color:white}
+    .controls{display:flex;gap:8px}
+    .controls button{flex:1;padding:8px;border-radius:8px;border:none;background:#5865f2;color:#fff;font-weight:700;cursor:pointer}
+    .controls button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+    .main{flex:1;display:flex;flex-direction:column;border-radius:10px;background:#1f2326;padding:12px;overflow:hidden}
+    .top{display:flex;align-items:center;justify-content:space-between;padding:6px 0}
+    .status{color:#9aa6b6;font-size:13px}
+    #messages{flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+    .msg{display:flex;gap:10px;align-items:flex-start;background:#111214;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.02)}
+    .avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0}
+    .msg-body{display:flex;flex-direction:column;gap:6px;flex:1}
+    .msg-meta{display:flex;align-items:center;gap:8px}
+    .msg-name{font-weight:800;color:#9ad3ff}
+    .msg-time{margin-left:auto;font-size:12px;color:#97a0ad}
+    .msg-text{color:#dbe6f7}
+    .msg-media{max-width:480px;border-radius:8px}
+    .composer{padding-top:8px;display:flex;flex-direction:column;gap:8px}
+    .composer .row{display:flex;gap:8px}
+    .composer input[type="text"]{flex:1;padding:10px;border-radius:8px;border:none;background:#0f1113;color:#eaf4ff}
+    .composer button{padding:10px 12px;border-radius:8px;border:none;background:#5865f2;color:white;cursor:pointer;font-weight:700}
+    .small{padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:#eaf4ff}
+    .muted{color:#97a0ad;font-size:13px}
+    @media (max-width:900px){.app{flex-direction:column}.sidebar{width:100%;order:2}.main{order:1}}
   </style>
 </head>
 <body>
-  <div class="center-wrap">
-    <div class="container">
-      <div class="header">
-        <div class="title">🔒 Password Protected Group Chat — Avatars / Media / Voice Notes</div>
-        <div class="muted">Note: enable Database & Storage rules for testing (see instructions)</div>
+  <div class="app">
+    <!-- Sidebar (Groups + actions) -->
+    <div class="sidebar">
+      <h3>Groups</h3>
+      <div id="groupsList" class="groupsList" aria-live="polite"></div>
+
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+        <input id="groupName" placeholder="Group name" style="padding:10px;border-radius:8px;border:none;background:#0f1113;color:#eaf4ff">
+        <input id="groupPassword" placeholder="Group password" type="password" style="padding:10px;border-radius:8px;border:none;background:#0f1113;color:#eaf4ff">
+        <div class="controls">
+          <button id="createGroupBtn">Create</button>
+          <button id="joinGroupBtn" class="ghost">Join</button>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input id="username" placeholder="Your name" style="flex:1;padding:10px;border-radius:8px;border:none;background:#0f1113;color:#eaf4ff">
+          <input id="avatarInput" type="file" accept="image/*" style="width:80px">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button id="refreshGroupsBtn" class="small">Refresh groups</button>
+          <button id="clearLocalBtn" class="small">Clear local</button>
+        </div>
+        <div class="muted" style="margin-top:6px">Tip: click a group to join quickly (will prompt password check)</div>
+      </div>
+    </div>
+
+    <!-- Main chat area -->
+    <div class="main" role="main">
+      <div class="top">
+        <div>
+          <div id="currentGroup" style="font-weight:800">Not in a group</div>
+          <div id="status" class="muted">Join or create a group to begin</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div id="recordStatus" class="muted" style="display:none">● recording…</div>
+          <button id="leaveBtn" class="small" style="display:none">Leave</button>
+        </div>
       </div>
 
-      <div class="body">
-        <!-- LEFT: Login / group creation -->
-        <div class="panel left">
-          <div style="font-weight:800; color:#cfe9ff">Sign in / Join or Create Group</div>
+      <div id="messages" role="log" aria-live="polite"></div>
 
-          <input id="username" class="login-input" placeholder="Your username (required)">
-          <label class="muted" for="avatarInput">Upload profile picture (optional)</label>
-          <input id="avatarInput" class="login-input" type="file" accept="image/*">
-
-          <input id="groupName" class="login-input" placeholder="Group name">
-          <input id="groupPassword" class="login-input" type="password" placeholder="Group password">
-
-          <div class="login-actions">
-            <button id="joinBtn" class="btn">Join Group</button>
-            <button id="createBtn" class="btn ghost">Create Group</button>
-          </div>
-
-          <div style="height:12px"></div>
-          <div style="font-size:13px; color:#9aa6b6">Debug / actions</div>
-          <div style="display:flex; gap:8px; margin-top:8px;">
-            <button id="clearLocal" class="btn ghost small">Clear Local</button>
-            <button id="showConsole" class="btn ghost small">Open Console</button>
+      <div class="composer">
+        <div class="row">
+          <input id="messageInput" type="text" placeholder="Type a message..." disabled>
+          <button id="sendBtn" disabled>Send</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="fileInput" type="file" accept="image/*,video/*,audio/*" />
+          <div style="display:flex;gap:8px">
+            <button id="sendFileBtn" class="small" disabled>Send Media</button>
+            <button id="recordBtn" class="small" disabled>🎤 Record</button>
           </div>
         </div>
-
-        <!-- RIGHT: Chat -->
-        <div class="panel right">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-            <div>
-              <div id="currentGroupLabel" style="font-weight:800; font-size:16px;">Not in a group</div>
-              <div id="status" class="muted">Join or create a group to start chatting</div>
-            </div>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <div id="recordStatus" class="micro-indicator" style="display:none">● recording…</div>
-              <button id="leaveBtn" class="btn ghost small" style="display:none">Leave</button>
-            </div>
-          </div>
-
-          <div id="messages" aria-live="polite"></div>
-
-          <div class="composer">
-            <div class="composer-row">
-              <input id="messageInput" class="composer-input" placeholder="Type a message..." disabled>
-              <button id="sendBtn" class="btn" disabled>Send</button>
-            </div>
-
-            <div style="display:flex; gap:8px; align-items:center;">
-              <input id="fileInput" type="file" accept="image/*,video/*,audio/*" />
-              <div class="file-buttons">
-                <button id="sendFileBtn" class="btn ghost small" disabled>Send Media</button>
-                <button id="recordBtn" class="btn small ghost" disabled>🎤 Record Voice</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div> <!-- /body -->
+      </div>
     </div>
   </div>
 
-  <!-- App Logic -->
+  <!-- Script -->
   <script type="module">
-  // Full updated logic with improved error handling and logging.
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-  import { getDatabase, ref, push, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
-  import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
+    // Imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+    import { getDatabase, ref, push, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+    import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
 
-  // ---------- Replace with your Firebase config ----------
-  const firebaseConfig = {
-    apiKey: "AIzaSyD0OAOSTic5z4U4obChkOieVLtvhgmIfxU",
-    authDomain: "friend-chat-eaabe.firebaseapp.com",
-    databaseURL: "https://friend-chat-eaabe-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "friend-chat-eaabe",
-    storageBucket: "friend-chat-eaabe.appspot.com",
-    messagingSenderId: "409498465855",
-    appId: "1:409498465855:web:bfec1da1a2f29a1f73aa8a"
-  };
+    // ---------- CONFIG ----------
+    const firebaseConfig = {
+      apiKey: "AIzaSyD0OAOSTic5z4U4obChkOieVLtvhgmIfxU",
+      authDomain: "friend-chat-eaabe.firebaseapp.com",
+      databaseURL: "https://friend-chat-eaabe-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "friend-chat-eaabe",
+      storageBucket: "friend-chat-eaabe.appspot.com",
+      messagingSenderId: "409498465855",
+      appId: "1:409498465855:web:bfec1da1a2f29a1f73aa8a"
+    };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const storage = getStorage(app);
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const storage = getStorage(app);
 
-  // ---------- DOM refs ----------
-  const usernameEl = document.getElementById('username');
-  const avatarInput = document.getElementById('avatarInput');
-  const groupNameEl = document.getElementById('groupName');
-  const groupPasswordEl = document.getElementById('groupPassword');
-  const joinBtn = document.getElementById('joinBtn');
-  const createBtn = document.getElementById('createBtn');
+    // ---------- DOM refs ----------
+    const groupsList = document.getElementById('groupsList');
+    const groupNameEl = document.getElementById('groupName');
+    const groupPasswordEl = document.getElementById('groupPassword');
+    const createGroupBtn = document.getElementById('createGroupBtn');
+    const joinGroupBtn = document.getElementById('joinGroupBtn');
+    const refreshGroupsBtn = document.getElementById('refreshGroupsBtn');
+    const clearLocalBtn = document.getElementById('clearLocalBtn');
 
-  const currentGroupLabel = document.getElementById('currentGroupLabel');
-  const statusEl = document.getElementById('status');
-  const messagesEl = document.getElementById('messages');
+    const usernameEl = document.getElementById('username');
+    const avatarInput = document.getElementById('avatarInput');
 
-  const messageInput = document.getElementById('messageInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const fileInput = document.getElementById('fileInput');
-  const sendFileBtn = document.getElementById('sendFileBtn');
-  const recordBtn = document.getElementById('recordBtn');
-  const recordStatus = document.getElementById('recordStatus');
-  const leaveBtn = document.getElementById('leaveBtn');
+    const currentGroupLabel = document.getElementById('currentGroup');
+    const statusEl = document.getElementById('status');
+    const messagesEl = document.getElementById('messages');
 
-  const clearLocalBtn = document.getElementById('clearLocal');
-  const showConsoleBtn = document.getElementById('showConsole');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const fileInput = document.getElementById('fileInput');
+    const sendFileBtn = document.getElementById('sendFileBtn');
+    const recordBtn = document.getElementById('recordBtn');
+    const recordStatus = document.getElementById('recordStatus');
+    const leaveBtn = document.getElementById('leaveBtn');
 
-  // ---------- State ----------
-  let currentGroup = null;
-  let currentUser = null;
-  let avatarURL = null;
-  let mediaRecorder = null;
-  let audioChunks = [];
-  let isRecording = false;
-  let msgsListenerUnsubscribe = null;
+    // ---------- State ----------
+    let currentGroup = null;
+    let currentUser = null;
+    let avatarURL = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
 
-  // ---------- Helpers ----------
-  function log(...args) { console.log('[FC]', ...args); }
-  function showStatus(t) { statusEl.textContent = t || ''; }
-  function enableComposer(enabled) {
-    messageInput.disabled = !enabled;
-    sendBtn.disabled = !enabled;
-    sendFileBtn.disabled = !enabled;
-    recordBtn.disabled = !enabled;
-    if (!enabled) {
-      messageInput.value = '';
-      fileInput.value = '';
+    // ---------- Helpers ----------
+    const log = (...args) => console.log('[FriendChat]', ...args);
+
+    function showStatus(text) { statusEl.textContent = text; }
+    function enableComposer(enable) {
+      messageInput.disabled = !enable;
+      sendBtn.disabled = !enable;
+      sendFileBtn.disabled = !enable;
+      recordBtn.disabled = !enable;
     }
-  }
-  function formatTime(isoOrText) {
-    try { return new Date().toLocaleTimeString(); } catch(e){ return ''; }
-  }
 
-  // Upload helper with error handling
-  async function uploadFile(file) {
-    try {
-      log('Uploading file', file.name, file.type, file.size);
-      const path = `uploads/${Date.now()}_${file.name.replace(/\s+/g,'_')}`;
-      const storageRef = sRef(storage, path);
-      // uploadBytes returns snapshot
-      const snap = await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(snap.ref);
-      log('Upload complete:', url);
-      return url;
-    } catch (err) {
-      console.error('uploadFile error', err);
-      alert('Upload failed: ' + (err && err.message ? err.message : err));
-      throw err;
+    // ---------- Upload utility ----------
+    async function uploadFile(file) {
+      try {
+        log('uploadFile', file.name, file.type);
+        const safeName = file.name.replace(/\s+/g, '_').slice(0, 200);
+        const path = `uploads/${Date.now()}_${safeName}`;
+        const sr = sRef(storage, path);
+        const snap = await uploadBytes(sr, file);
+        const url = await getDownloadURL(snap.ref);
+        log('uploaded ->', url);
+        return url;
+      } catch (err) {
+        console.error('uploadFile error', err);
+        throw err;
+      }
     }
-  }
 
-  // ---------- Group create / join ----------
-  createBtn.addEventListener('click', async () => {
-    const g = groupNameEl.value.trim();
-    const pw = groupPasswordEl.value.trim();
-    if (!g || !pw) { alert('Enter group and password'); return; }
-    try {
-      await set(ref(db, `groups/${g}/password`), pw);
-      // ensure default messages node exists and default channel concept
-      await set(ref(db, `groups/${g}/meta/createdAt`), Date.now());
-      alert('Group created: ' + g);
-      loadGroupList(); // refresh UI (optional)
-    } catch (e) { console.error('create group failed', e); alert('Create failed: ' + e.message); }
-  });
+    // ---------- Groups (list + create + join) ----------
+    async function loadGroupList() {
+      groupsList.innerHTML = '';
+      try {
+        const groupsRef = ref(db, 'groups');
+        // Use onValue to update live; for simple refresh we can use get(child...) but onValue gives live changes
+        onValue(groupsRef, snapshot => {
+          groupsList.innerHTML = '';
+          snapshot.forEach(child => {
+            const key = child.key;
+            const div = document.createElement('div');
+            div.className = 'groupItem';
+            div.textContent = key;
+            div.addEventListener('click', async () => {
+              // when clicked, prompt password and attempt join
+              const pw = prompt('Enter password for group: ' + key);
+              if (pw === null) return;
+              groupNameEl.value = key;
+              groupPasswordEl.value = pw;
+              await joinGroup();
+            });
+            groupsList.appendChild(div);
+          });
+        }, err => {
+          console.error('loadGroupList onValue error', err);
+        });
+      } catch (err) {
+        console.error('loadGroupList error', err);
+      }
+    }
 
-  joinBtn.addEventListener('click', async () => {
-    const g = groupNameEl.value.trim();
-    const pw = groupPasswordEl.value.trim();
-    const user = usernameEl.value.trim();
-    if (!g || !pw || !user) { alert('Fill username, group and password'); return; }
+    createGroupBtn.addEventListener('click', async () => {
+      const g = groupNameEl.value.trim();
+      const pw = groupPasswordEl.value.trim();
+      if (!g || !pw) { alert('Enter group name and password'); return; }
+      try {
+        await set(ref(db, `groups/${g}/password`), pw);
+        await set(ref(db, `groups/${g}/meta`), { createdAt: Date.now() });
+        alert('Group created: ' + g);
+        loadGroupList();
+      } catch (err) {
+        console.error('createGroup error', err);
+        alert('Create failed: ' + (err.message || err));
+      }
+    });
 
-    try {
-      const snap = await get(child(ref(db), `groups/${g}/password`));
-      if (!snap.exists()) { alert('Group not found'); return; }
-      if (snap.val() !== pw) { alert('Wrong password'); return; }
+    async function joinGroup() {
+      const g = groupNameEl.value.trim();
+      const pw = groupPasswordEl.value.trim();
+      const name = usernameEl.value.trim();
+      if (!g || !pw || !name) { alert('Enter group, password & your name'); return; }
 
-      // upload avatar if any
-      if (avatarInput.files && avatarInput.files[0]) {
-        try {
-          avatarURL = await uploadFile(avatarInput.files[0]);
-        } catch(e) {
-          console.warn('avatar upload failed, continuing without avatar');
+      try {
+        // check password
+        const snap = await get(child(ref(db), `groups/${g}/password`));
+        if (!snap.exists()) { alert('Group not found'); return; }
+        if (snap.val() !== pw) { alert('Wrong password'); return; }
+
+        // upload avatar if selected
+        if (avatarInput.files && avatarInput.files[0]) {
+          try {
+            avatarURL = await uploadFile(avatarInput.files[0]);
+          } catch (err) {
+            console.warn('avatar upload failed, continuing without avatar', err);
+            avatarURL = null;
+          }
+        } else {
           avatarURL = null;
         }
+
+        currentGroup = g;
+        currentUser = name;
+        currentGroupLabel.textContent = '# ' + currentGroup;
+        showStatus('Connected as ' + currentUser);
+        enableComposer(true);
+        leaveBtn.style.display = 'inline-block';
+
+        // start listening messages
+        startListeningMessages();
+      } catch (err) {
+        console.error('joinGroup error', err);
+        alert('Join failed: ' + (err.message || err));
+      }
+    }
+
+    joinGroupBtn.addEventListener('click', joinGroup);
+
+    refreshGroupsBtn.addEventListener('click', loadGroupList);
+    clearLocalBtn.addEventListener('click', () => { localStorage.clear(); alert('LocalStorage cleared'); });
+
+    // ---------- Messages listen/send ----------
+    let messagesRefUnsub = null;
+
+    function startListeningMessages() {
+      if (!currentGroup) return;
+      messagesEl.innerHTML = '';
+      const messagesRef = ref(db, `groups/${currentGroup}/messages`);
+      onValue(messagesRef, (snapshot) => {
+        messagesEl.innerHTML = '';
+        snapshot.forEach(child => {
+          const msg = child.val();
+          const node = renderMessage(msg);
+          messagesEl.appendChild(node);
+        });
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }, err => {
+        console.error('messages onValue error', err);
+        showStatus('Error loading messages: ' + (err.message || err));
+      });
+    }
+
+    async function sendMessage(text, type = 'text') {
+      if (!currentGroup || !currentUser) { alert('Join a group first'); return; }
+      if (!text) return;
+      try {
+        const payload = {
+          name: currentUser,
+          avatar: avatarURL || null,
+          content: text,
+          type,
+          time: new Date().toISOString()
+        };
+        await push(ref(db, `groups/${currentGroup}/messages`), payload);
+      } catch (err) {
+        console.error('sendMessage error', err);
+        alert('Send failed: ' + (err.message || err));
+      }
+    }
+
+    sendBtn.addEventListener('click', () => {
+      const t = messageInput.value.trim();
+      if (!t) return;
+      sendMessage(t, 'text');
+      messageInput.value = '';
+    });
+
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); sendBtn.click(); }
+    });
+
+    // ---------- Send media ----------
+    sendFileBtn.addEventListener('click', async () => {
+      if (!fileInput.files || fileInput.files.length === 0) { alert('Select a file'); return; }
+      const file = fileInput.files[0];
+      try {
+        sendFileBtn.disabled = true;
+        const url = await uploadFile(file);
+        let type = 'file';
+        if (file.type.startsWith('image')) type = 'image';
+        else if (file.type.startsWith('video')) type = 'video';
+        else if (file.type.startsWith('audio')) type = 'audio';
+        await sendMessage(url, type);
+        fileInput.value = '';
+      } catch (err) {
+        console.error('sendFile error', err);
+        alert('Media send failed: ' + (err.message || err));
+      } finally {
+        sendFileBtn.disabled = false;
+      }
+    });
+
+    // ---------- Recording voice notes ----------
+    recordBtn.addEventListener('click', async () => {
+      if (!currentGroup) { alert('Join a group first'); return; }
+      if (!isRecording) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+          mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+          mediaRecorder.onstop = async () => {
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+            const file = new File([blob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
+            try {
+              const url = await uploadFile(file);
+              await sendMessage(url, 'audio');
+            } catch (err) {
+              console.error('voice upload error', err);
+              alert('Voice upload failed: ' + (err.message || err));
+            }
+            // stop tracks
+            stream.getTracks().forEach(t => t.stop());
+          };
+          mediaRecorder.start();
+          isRecording = true;
+          recordStatus.style.display = 'inline-block';
+          recordBtn.textContent = '⏹ Stop';
+        } catch (err) {
+          console.error('startRecording error', err);
+          alert('Microphone access denied or error: ' + (err.message || err));
+        }
       } else {
-        avatarURL = null;
+        // stop
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+        isRecording = false;
+        recordStatus.style.display = 'none';
+        recordBtn.textContent = '🎤 Record';
+      }
+    });
+
+    // ---------- Render message element ----------
+    function renderMessage(msg) {
+      const wrap = document.createElement('div');
+      wrap.className = 'msg';
+
+      const av = document.createElement('img');
+      av.className = 'avatar';
+      av.src = msg.avatar || 'https://via.placeholder.com/44/2f3136/ffffff?text=?';
+      av.alt = msg.name || 'User';
+      av.onerror = () => { av.src = 'https://via.placeholder.com/44/2f3136/ffffff?text=?'; };
+
+      const body = document.createElement('div');
+      body.className = 'msg-body';
+
+      const meta = document.createElement('div');
+      meta.className = 'msg-meta';
+      const nameEl = document.createElement('div'); nameEl.className = 'msg-name'; nameEl.textContent = msg.name || 'Unknown';
+      const timeEl = document.createElement('div'); timeEl.className = 'msg-time';
+      try { timeEl.textContent = new Date(msg.time).toLocaleTimeString(); } catch(e) { timeEl.textContent = msg.time || ''; }
+      meta.appendChild(nameEl); meta.appendChild(timeEl);
+
+      const content = document.createElement('div'); content.className = 'msg-text';
+
+      if (!msg.type || msg.type === 'text') {
+        content.textContent = msg.content || '';
+      } else if (msg.type === 'image') {
+        const im = document.createElement('img'); im.className = 'msg-media'; im.src = msg.content || ''; im.alt = 'image'; im.onerror = () => im.style.display = 'none';
+        content.appendChild(im);
+      } else if (msg.type === 'video') {
+        const v = document.createElement('video'); v.className = 'msg-media'; v.src = msg.content || ''; v.controls = true; v.preload = 'metadata'; v.onerror = () => v.style.display = 'none';
+        content.appendChild(v);
+      } else if (msg.type === 'audio') {
+        const a = document.createElement('audio'); a.controls = true; a.src = msg.content || ''; content.appendChild(a);
+      } else {
+        const a = document.createElement('a'); a.href = msg.content || '#'; a.target = '_blank'; a.textContent = 'Download file'; content.appendChild(a);
       }
 
-      currentGroup = g;
-      currentUser = user;
-      currentGroupLabel.textContent = `# ${currentGroup}`;
-      showStatus('Connected as ' + currentUser);
-      enableComposer(true);
-      leaveBtn.style.display = 'inline-block';
+      body.appendChild(meta);
+      body.appendChild(content);
+      wrap.appendChild(av);
+      wrap.appendChild(body);
 
-      // start listening messages
-      startListeningMessages();
-    } catch (err) {
-      console.error('joinGroup failed', err);
-      alert('Join failed: ' + (err.message || err));
+      return wrap;
     }
-  });
 
-  leaveBtn.addEventListener('click', () => {
-    if (!currentGroup) return;
-    if (msgsListenerUnsubscribe) { msgsListenerUnsubscribe(); msgsListenerUnsubscribe = null; }
-    messagesEl.innerHTML = '';
-    currentGroup = null;
-    currentUser = null;
-    avatarURL = null;
-    currentGroupLabel.textContent = 'Not in a group';
-    showStatus('Left group');
-    enableComposer(false);
-    leaveBtn.style.display = 'none';
-  });
-
-  // ---------- Messages listen/send ----------
-  function startListeningMessages() {
-    if (!currentGroup) return;
-    // detach previous listener
-    // Note: firebase v9 onValue returns an unsubscribe function if you call the onValue returned? No — onValue returns a function to unsubscribe only by passing that same reference to off; we will emulate by keeping track and using onValue and later setting onValue with empty callback isn't ideal.
-    // Simpler: just call onValue and ignore duplicates; keep it simple and safe for this demo.
-    messagesEl.innerHTML = '';
-    showStatus('Listening for messages...');
-    const messagesRef = ref(db, `groups/${currentGroup}/messages`);
-    // Use onValue; if user leaves, we can't easily remove without onDisconnect details, but it's fine for this demo.
-    onValue(messagesRef, (snapshot) => {
+    // ---------- Leave group ----------
+    leaveBtn.addEventListener('click', () => {
+      currentGroup = null;
+      currentUser = null;
+      avatarURL = null;
       messagesEl.innerHTML = '';
-      snapshot.forEach(child => {
-        const msg = child.val();
-        const el = renderMessage(msg);
-        messagesEl.appendChild(el);
-      });
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-      showStatus('Connected as ' + currentUser + ' — messages loaded');
-    }, (err) => {
-      console.error('messages onValue error', err);
-      showStatus('Error loading messages: ' + (err.message || err));
+      currentGroupLabel.textContent = 'Not in a group';
+      showStatus('Left group');
+      enableComposer(false);
+      leaveBtn.style.display = 'none';
     });
-  }
 
-  async function doSendMessage(rawText, type = 'text') {
-    if (!currentGroup || !currentUser) { alert('Join a group first'); return; }
-    if (!rawText) return;
-    try {
-      const payload = {
-        name: currentUser,
-        avatar: avatarURL || null,
-        content: rawText,
-        type,
-        time: new Date().toISOString()
-      };
-      await push(ref(db, `groups/${currentGroup}/messages`), payload);
-    } catch (err) {
-      console.error('send message failed', err);
-      alert('Send failed: ' + (err.message || err));
-    }
-  }
+    // ---------- Initial setup ----------
+    enableComposer(false);
+    loadGroupList(); // populate groups on load
 
-  sendBtn.addEventListener('click', () => {
-    const t = messageInput.value.trim();
-    if (!t) return;
-    doSendMessage(t, 'text');
-    messageInput.value = '';
-  });
+    // Expose for quick debugging
+    window._friendchat = { db, storage, uploadFile, loadGroupList, sendMessage };
 
-  messageInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); sendBtn.click(); }
-  });
-
-  // ---------- send file ----------
-  sendFileBtn.addEventListener('click', async () => {
-    if (!fileInput.files || fileInput.files.length === 0) { alert('Select a file first'); return; }
-    const f = fileInput.files[0];
-    try {
-      sendFileBtn.classList.add('disabled');
-      const url = await uploadFile(f);
-      let type = 'file';
-      if (f.type.startsWith('image')) type = 'image';
-      else if (f.type.startsWith('video')) type = 'video';
-      else if (f.type.startsWith('audio')) type = 'audio';
-      await doSendMessage(url, type);
-      fileInput.value = '';
-    } catch (err) {
-      console.error('sendFile failed', err);
-    } finally {
-      sendFileBtn.classList.remove('disabled');
-    }
-  });
-
-  // ---------- recording voice note ----------
-  async function startRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder = new MediaRecorder(stream);
-      audioChunks = [];
-      mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
-      mediaRecorder.onstop = async () => {
-        const blob = new Blob(audioChunks, { type: 'audio/webm' });
-        const file = new File([blob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
-        try {
-          const url = await uploadFile(file);
-          await doSendMessage(url, 'audio');
-        } catch (err) {
-          console.error('upload voice failed', err);
-          alert('Voice upload failed: ' + (err.message || err));
-        }
-        // stop tracks
-        stream.getTracks().forEach(t => t.stop());
-      };
-      mediaRecorder.start();
-      isRecording = true;
-      recordStatus.style.display = 'inline';
-      recordBtn.textContent = '⏹ Stop';
-    } catch (err) {
-      console.error('startRecording error', err);
-      alert('Microphone access denied or error: ' + (err.message || err));
-    }
-  }
-
-  function stopRecording() {
-    if (mediaRecorder && isRecording) {
-      mediaRecorder.stop();
-      isRecording = false;
-      recordStatus.style.display = 'none';
-      recordBtn.textContent = '🎤 Record Voice';
-    }
-  }
-
-  recordBtn.addEventListener('click', () => {
-    if (!currentGroup) { alert('Join a group first'); return; }
-    if (!isRecording) startRecording(); else stopRecording();
-  });
-
-  // ---------- render message DOM ----------
-  function renderMessage(msg) {
-    const wrap = document.createElement('div');
-    wrap.className = 'msg';
-
-    // avatar
-    const av = document.createElement('img');
-    av.className = 'avatar';
-    av.src = msg.avatar || 'https://via.placeholder.com/44/2f3136/ffffff?text=?';
-    av.alt = msg.name || 'User';
-    av.onerror = () => { av.src = 'https://via.placeholder.com/44/2f3136/ffffff?text=?'; };
-
-    const body = document.createElement('div');
-    body.className = 'msg-body';
-
-    const meta = document.createElement('div');
-    meta.className = 'msg-meta';
-    const nameEl = document.createElement('div'); nameEl.className = 'msg-name'; nameEl.textContent = msg.name || 'Unknown';
-    const timeEl = document.createElement('div'); timeEl.className = 'msg-time'; 
-    try { timeEl.textContent = new Date(msg.time).toLocaleTimeString(); } catch(e) { timeEl.textContent = msg.time || ''; }
-    meta.appendChild(nameEl);
-    meta.appendChild(timeEl);
-
-    const contentEl = document.createElement('div');
-    contentEl.className = 'msg-text';
-
-    // content by type
-    if (msg.type === 'text' || !msg.type) {
-      contentEl.textContent = msg.content || '';
-    } else if (msg.type === 'image') {
-      const im = document.createElement('img'); im.className = 'msg-media'; im.src = msg.content || ''; im.alt = 'image';
-      im.onerror = () => { im.style.display = 'none'; };
-      contentEl.appendChild(im);
-    } else if (msg.type === 'video') {
-      const v = document.createElement('video'); v.className = 'msg-media'; v.controls = true; v.src = msg.content || ''; v.preload = 'metadata';
-      v.onerror = () => { v.style.display = 'none'; };
-      contentEl.appendChild(v);
-    } else if (msg.type === 'audio') {
-      const a = document.createElement('audio'); a.controls = true; a.src = msg.content || ''; a.preload = 'auto';
-      contentEl.appendChild(a);
-    } else {
-      // generic file
-      const a = document.createElement('a'); a.href = msg.content || '#'; a.target = '_blank'; a.textContent = 'Download file';
-      contentEl.appendChild(a);
-    }
-
-    body.appendChild(meta);
-    body.appendChild(contentEl);
-
-    wrap.appendChild(av);
-    wrap.appendChild(body);
-
-    return wrap;
-  }
-
-  // ---------- utility buttons ----------
-  clearLocalBtn.addEventListener('click', () => {
-    localStorage.clear();
-    alert('LocalStorage cleared');
-  });
-  showConsoleBtn.addEventListener('click', () => { alert('Open your browser console (F12) to see logs.'); });
-
-  // ---------- UI initial state ----------
-  enableComposer(false);
-
-  // expose debug helpers
-  window._friendchat = { db, storage, uploadFile, renderMessage };
-
-  // ---------- final note ----------
-  log('App loaded. Ensure Database & Storage rules allow read/write during testing.');
+    log('Friend Chat initialized. If uploads fail, check Storage rules and console.');
   </script>
 </body>
 </html>
