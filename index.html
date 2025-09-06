@@ -5,61 +5,183 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Password Protected Group Chat</title>
   <style>
-    body {
+    /* ========= RESET ========= */
+    * {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #36393f;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #2c2f33;
       color: #fff;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      overflow: hidden;
     }
+
     .container {
-      background: #2f3136;
+      background: #23272a;
       width: 100%;
-      max-width: 600px;
+      max-width: 700px;
       height: 90vh;
-      border-radius: 10px;
+      border-radius: 12px;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      box-shadow: 0 0 25px rgba(0,0,0,0.6);
+      animation: fadeIn 1s ease-in-out;
     }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* ========= HEADER ========= */
     .header {
-      padding: 12px;
-      background: #202225;
+      padding: 16px;
+      background: linear-gradient(90deg, #5865f2, #404eed);
       text-align: center;
       font-weight: bold;
+      font-size: 20px;
+      letter-spacing: 1px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
     }
+
+    /* ========= SCREENS ========= */
     .screen {
       flex: 1;
       display: none;
       flex-direction: column;
       padding: 20px;
       overflow-y: auto;
+      animation: slideUp 0.5s ease;
     }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .active { display: flex; }
+
+    /* ========= INPUTS & BUTTONS ========= */
     input, button {
-      padding: 10px;
-      margin: 6px 0;
-      border-radius: 5px;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 8px;
       border: none;
-      font-size: 14px;
+      font-size: 15px;
+      transition: 0.3s ease;
     }
-    input { width: 100%; }
+
+    input {
+      width: 100%;
+      background: #40444b;
+      color: #fff;
+      outline: none;
+    }
+
+    input:focus {
+      background: #36393f;
+      border: 1px solid #5865f2;
+    }
+
     button {
       background: #5865f2;
       color: white;
       cursor: pointer;
       font-weight: bold;
     }
-    button:hover { background: #4752c4; }
-    #messages { flex: 1; overflow-y: auto; margin: 10px 0; }
-    .msg { margin-bottom: 8px; }
+
+    button:hover {
+      background: #4752c4;
+      transform: scale(1.05);
+    }
+
+    /* ========= MESSAGES ========= */
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      margin: 10px 0;
+      padding-right: 6px;
+      scrollbar-width: thin;
+      scrollbar-color: #5865f2 #2c2f33;
+    }
+
+    #messages::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #messages::-webkit-scrollbar-thumb {
+      background: #5865f2;
+      border-radius: 8px;
+    }
+
+    .msg {
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      background: #40444b;
+      border-radius: 8px;
+      animation: popIn 0.3s ease;
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: translateY(10px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .msg.self {
+      background: #5865f2;
+      text-align: right;
+      margin-left: auto;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .msg strong {
+      color: #00aff4;
+    }
+
+    /* ========= INPUT AREA ========= */
     .input-area {
       display: flex;
+      background: #202225;
+      padding: 12px;
+      border-top: 2px solid #18191c;
     }
-    .input-area input { flex: 1; margin-right: 6px; }
+
+    .input-area input {
+      flex: 1;
+      margin-right: 10px;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .typing-indicator {
+      font-size: 12px;
+      color: #bbb;
+      font-style: italic;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+
+    /* ========= RESPONSIVE ========= */
+    @media (max-width: 600px) {
+      .container {
+        max-width: 100%;
+        height: 100vh;
+        border-radius: 0;
+      }
+    }
   </style>
 </head>
 <body>
@@ -78,6 +200,7 @@
     <!-- Chat Screen -->
     <div id="chatScreen" class="screen">
       <div id="messages"></div>
+      <div class="typing-indicator" id="typingIndicator" style="display:none;">Someone is typing...</div>
       <div class="input-area">
         <input id="messageInput" placeholder="Type a message...">
         <button id="sendBtn">Send</button>
@@ -113,9 +236,11 @@
     const messagesDiv = document.getElementById("messages");
     const messageInput = document.getElementById("messageInput");
     const sendBtn = document.getElementById("sendBtn");
+    const typingIndicator = document.getElementById("typingIndicator");
 
     let currentGroup = null;
     let currentUser = null;
+    let typingTimeout;
 
     async function createGroup() {
       const group = groupNameInput.value.trim();
@@ -160,7 +285,7 @@
         snapshot.forEach(child => {
           const msg = child.val();
           const div = document.createElement("div");
-          div.className = "msg";
+          div.className = "msg" + (msg.name === currentUser ? " self" : "");
           div.textContent = `[${msg.time}] ${msg.name}: ${msg.text}`;
           messagesDiv.appendChild(div);
         });
@@ -171,9 +296,19 @@
     createBtn.addEventListener("click", createGroup);
     joinBtn.addEventListener("click", joinGroup);
     sendBtn.addEventListener("click", sendMessage);
+
     messageInput.addEventListener("keypress", e => {
       if (e.key === "Enter") sendMessage();
+      showTyping();
     });
+
+    function showTyping() {
+      typingIndicator.style.display = "block";
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        typingIndicator.style.display = "none";
+      }, 2000);
+    }
   </script>
 </body>
 </html>
