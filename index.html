@@ -1,847 +1,265 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Maxed-Out Realtime Chat (Firebase)</title>
-
-  <!-- FIREBASE (modular) - we'll use version 12.x CDN modular imports via ES modules -->
-  <!-- NOTE: you'll replace the firebaseConfig below with your own project's -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Maxed Out Group Chat</title>
   <style>
-    /* -------------------- MAXED CSS + ANIMATIONS -------------------- */
-    :root{
-      --bg:#0f1720;
-      --card:#0b1220;
-      --muted:#9aa4b2;
-      --accent1:#6c8cff;
-      --accent2:#40e0d0;
-      --accent3:#8b5cf6;
-      --glass: rgba(255,255,255,0.03);
-      --success:#22c55e;
-      --danger:#ef4444;
-      --radius:14px;
-      --ui-gap:12px;
-      --shadow: 0 8px 30px rgba(2,6,23,0.7);
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg,#23272a,#2c2f33);
+      color:#fff; display:flex; justify-content:center; align-items:center;
+      height:100vh; overflow:hidden;
+    }
+    .container {
+      background:#23272a; width:100%; max-width:1000px; height:95vh;
+      border-radius:14px; display:flex; flex-direction:column;
+      overflow:hidden; box-shadow:0 0 25px rgba(0,0,0,0.7);
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn { from{opacity:0;transform:scale(0.95);} to{opacity:1;transform:scale(1);} }
+
+    .header {
+      padding:16px; background:linear-gradient(90deg,#5865f2,#404eed);
+      text-align:center; font-weight:bold; font-size:22px; letter-spacing:1px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.6);
     }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family:Inter, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      background: radial-gradient(1200px 600px at 10% 20%, rgba(80,100,255,0.06), transparent),
-                  linear-gradient(180deg, rgba(11,15,30,1) 0%, rgba(6,8,14,1) 100%);
-      color:#e6eef8;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:20px;
-      -webkit-font-smoothing:antialiased;
-    }
+    .screen { flex:1; display:none; flex-direction:column; padding:20px; overflow-y:auto; }
+    .active { display:flex; }
 
-    .app {
-      width:100%;
-      max-width:1200px;
-      height:88vh;
-      border-radius:20px;
-      overflow:hidden;
-      display:grid;
-      grid-template-columns: 320px 1fr 360px;
-      gap:18px;
-      padding:16px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(10,12,18,0.02));
-      box-shadow: var(--shadow);
-      align-items:stretch;
-      transform-origin:center;
-      transition:transform .45s cubic-bezier(.2,.9,.3,1);
+    input,button {
+      padding:12px; margin:8px 0; border-radius:8px; border:none;
+      font-size:15px; transition:0.3s ease;
     }
-
-    /* small screens -> 1 column */
-    @media (max-width:1000px){
-      .app{grid-template-columns: 1fr; height:100vh; border-radius:0;}
-      .right, .left { display:none; } /* hide sidebars on narrow */
+    input {
+      width:100%; background:#40444b; color:#fff; outline:none;
     }
-
-    /* ----- left panel: login + channels + online users ----- */
-    .left{
-      background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
-      border-radius:var(--radius);
-      padding:16px;
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-      min-width:260px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
-      overflow:auto;
+    input:focus { background:#36393f; border:1px solid #5865f2; }
+    button {
+      background:#5865f2; color:#fff; cursor:pointer; font-weight:bold;
     }
-    .brand{
-      display:flex;align-items:center;gap:12px;padding:6px 2px;
+    button:hover { background:#4752c4; transform:scale(1.05); }
+
+    /* Layout */
+    .chatLayout { display:flex; flex:1; gap:12px; }
+    .userList {
+      width:200px; background:#202225; padding:10px; border-radius:8px;
+      overflow-y:auto; animation: slideIn 0.5s ease;
     }
-    .logo{
-      width:46px;height:46px;border-radius:10px;background:linear-gradient(45deg,var(--accent1),var(--accent3));
-      display:flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:20px;box-shadow:0 4px 18px rgba(80,100,255,0.18);
+    @keyframes slideIn { from{transform:translateX(-20px);opacity:0;} to{transform:translateX(0);opacity:1;} }
+    .user { padding:8px; margin-bottom:6px; border-radius:6px; background:#2c2f33; }
+    .user.online { border-left:4px solid #43b581; }
+    .user.offline { border-left:4px solid #f04747; }
+
+    #messages { flex:1; overflow-y:auto; padding-right:8px; }
+    .msg {
+      margin-bottom:12px; padding:10px 14px; background:#40444b; border-radius:8px;
+      animation: popIn 0.3s ease; position:relative;
     }
-    .brand h1{font-size:16px;margin:0}
-    .brand p{margin:0;font-size:12px;color:var(--muted)}
+    @keyframes popIn { from{opacity:0;transform:translateY(10px) scale(0.95);} to{opacity:1;transform:translateY(0) scale(1);} }
+    .msg.self { background:#5865f2; text-align:right; margin-left:auto; color:#fff; font-weight:bold; }
+    .msg strong { color:#00aff4; }
 
-    .auth {
-      display:flex;gap:8px;align-items:center;
+    .seen { font-size:10px; position:absolute; bottom:2px; right:6px; color:#aaa; }
+
+    .system { text-align:center; font-style:italic; font-size:13px; color:#bbb; margin:8px 0; }
+
+    .typing { font-size:12px; color:#bbb; font-style:italic; margin-top:4px; }
+
+    .input-area { display:flex; align-items:center; background:#202225; padding:12px; border-top:2px solid #18191c; }
+    .input-area input { flex:1; margin-right:10px; }
+    .emoji-picker { margin-right:8px; cursor:pointer; }
+
+    @media(max-width:700px) {
+      .chatLayout { flex-direction:column; }
+      .userList { width:100%; height:100px; display:flex; flex-wrap:wrap; }
     }
-    .btn {
-      background:linear-gradient(90deg,var(--accent1),var(--accent3));padding:8px 12px;border-radius:10px;border:none;color:white;font-weight:600;
-      cursor:pointer;box-shadow:0 6px 20px rgba(99,102,241,0.12);transition:transform .18s, box-shadow .18s;
-    }
-    .btn:active{transform:translateY(1px)}
-    .ghost { background:transparent;border:1px solid rgba(255,255,255,0.04); }
-
-    .search {
-      margin-top:6px;
-      display:flex;gap:8px;
-    }
-    .search input{flex:1;padding:10px;border-radius:10px;background:var(--glass);border:1px solid rgba(255,255,255,0.03);color:inherit}
-    .channels { margin-top:8px; display:flex; flex-direction:column; gap:8px; }
-    .channel {
-      padding:10px;border-radius:10px;display:flex;align-items:center;gap:8px;cursor:pointer;
-      transition:all .18s; background:transparent;border:1px solid transparent;
-    }
-    .channel:hover{transform:translateY(-4px);box-shadow:0 10px 30px rgba(2,6,23,0.6)}
-    .channel.active{background:linear-gradient(90deg, rgba(108,140,255,0.08), rgba(139,92,246,0.06));border:1px solid rgba(108,140,255,0.06)}
-
-    .online-list { margin-top:8px; display:flex;flex-direction:column; gap:8px;}
-    .user-row{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;background:rgba(255,255,255,0.01)}
-    .dot{width:10px;height:10px;border-radius:50%}
-    .user-name{font-weight:600;font-size:13px}
-    .small{font-size:12px;color:var(--muted)}
-
-    /* center: chat */
-    .center{
-      background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(10,12,18,0.015));
-      border-radius:var(--radius);
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-      position:relative;
-      padding:0;
-    }
-    .chat-header{
-      padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.02);
-      display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
-    }
-    .chat-title{font-weight:700}
-    .chat-body{flex:1; overflow:auto;padding:20px; display:flex;flex-direction:column; gap:12px;}
-    .system{align-self:center;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,0.02);font-style:italic;color:var(--muted);font-size:13px}
-
-    /* message bubble styles */
-    .message {
-      display:flex; gap:12px; align-items:flex-start; max-width:85%;
-      animation: slideIn .45s cubic-bezier(.2,.9,.3,1);
-    }
-    @keyframes slideIn{ from{opacity:0; transform:translateY(12px) scale(.995)} to{opacity:1; transform:none} }
-
-    .message.left{ align-self:flex-start; transform-origin:left; }
-    .message.right{ align-self:flex-end; flex-direction:row-reverse; transform-origin:right; }
-
-    .avatar {
-      width:44px;height:44px;border-radius:10px;background:linear-gradient(45deg,var(--accent2),var(--accent3));
-      display:flex;align-items:center;justify-content:center;font-weight:700;color:#012;flex-shrink:0;box-shadow:0 6px 20px rgba(64,224,208,0.06);
-      transition:transform .18s;
-    }
-    .bubble {
-      padding:12px 14px;border-radius:14px;position:relative;display:flex;flex-direction:column;gap:8px;
-      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      box-shadow: 0 8px 30px rgba(2,6,23,0.5);
-      border:1px solid rgba(255,255,255,0.03);
-      backdrop-filter: blur(6px);
-      transition: transform .12s ease, box-shadow .12s ease;
-    }
-    .message.right .bubble{ background: linear-gradient(90deg,var(--accent1), var(--accent3)); color:#fff; border:1px solid rgba(255,255,255,0.04) }
-    .bubble:hover{ transform:translateY(-4px) scale(1.004); box-shadow:0 18px 40px rgba(2,6,23,0.6); }
-
-    .meta{ display:flex;align-items:center;gap:8px; justify-content:space-between }
-    .meta .who{font-weight:700;color:var(--accent2)}
-    .meta .when{font-size:12px;color:var(--muted);font-weight:600}
-
-    .text { white-space:pre-wrap; font-size:14px; line-height:1.35; color:inherit; }
-    .img-preview{max-width:320px;border-radius:10px; overflow:hidden; display:block; margin-top:4px; border:1px solid rgba(255,255,255,0.03)}
-    .actions{display:flex;gap:8px;align-items:center}
-
-    .action-btn{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:6px;border-radius:8px}
-    .action-btn:hover{background:rgba(255,255,255,0.02); color:var(--accent1)}
-
-    .reactions{ display:flex; gap:6px; margin-top:6px; }
-    .reaction{ padding:4px 8px;border-radius:999px;background:rgba(0,0,0,0.25); font-size:13px; cursor:pointer }
-    .pinned{font-size:12px;color:var(--accent1);font-weight:700}
-
-    /* input area */
-    .composer{
-      padding:12px 16px;border-top:1px solid rgba(255,255,255,0.02);display:flex;gap:12px;align-items:center;background:linear-gradient(180deg,transparent, rgba(0,0,0,0.02));
-    }
-    .file-input{display:none;}
-    .input {
-      flex:1;padding:12px;border-radius:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02);
-      color:inherit;font-size:14px;min-height:44px;outline:none;resize:none;
-    }
-    .small-btn{background:rgba(255,255,255,0.03);border-radius:10px;padding:8px 10px;border:none;color:inherit;cursor:pointer}
-    .theme-toggle{display:flex;gap:8px;align-items:center}
-
-    /* right panel: users, pinned, settings */
-    .right{
-      background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
-      border-radius:var(--radius);
-      padding:16px;
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-      min-width:300px;
-      overflow:auto;
-    }
-    .section{background:rgba(255,255,255,0.01);padding:12px;border-radius:12px}
-    .online-dot{width:10px;height:10px;border-radius:50%;background:var(--success);box-shadow:0 2px 8px rgba(34,197,94,0.12)}
-
-    /* small helpers */
-    .muted{color:var(--muted)}
-    .flex{display:flex;align-items:center;gap:10px}
-    .centered{display:flex;align-items:center;justify-content:center}
-    .hidden{display:none}
-
-    /* message search highlight */
-    .highlight{ background: linear-gradient(90deg, rgba(255,255,0,0.08), rgba(255,255,0,0.03)); padding:1px 4px;border-radius:4px }
   </style>
 </head>
 <body>
-  <div class="app" id="app">
+  <div class="container">
+    <div class="header">💬 Maxed Out Group Chat</div>
 
-    <!-- LEFT: Auth, channels, search, online (compact) -->
-    <div class="left">
-      <div class="brand">
-        <div class="logo">SP</div>
-        <div>
-          <h1>ShopSphere Chat</h1>
-          <p class="small">Realtime group chat · powered by Firebase</p>
-        </div>
-      </div>
-
-      <div class="auth">
-        <div id="me" style="flex:1">
-          <div class="small muted" id="meInfo">Not signed in</div>
-        </div>
-        <button class="btn" id="btnGoogle">Sign in</button>
-        <button class="btn ghost" id="btnGuest">Guest</button>
-      </div>
-
-      <div class="search">
-        <input id="searchInput" placeholder="Search messages or users..." />
-        <button class="small-btn" id="btnSearch">🔎</button>
-      </div>
-
-      <div class="channels">
-        <div class="channel active" data-channel="global"># general</div>
-        <div class="channel" data-channel="dev"># dev-talk</div>
-        <div class="channel" data-channel="random"># random</div>
-        <div class="channel" data-channel="games"># games</div>
-      </div>
-
-      <div style="margin-top:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div class="small muted">Online</div>
-          <div class="small muted" id="onlineCount">0</div>
-        </div>
-        <div class="online-list" id="onlineList"></div>
-      </div>
+    <!-- Login -->
+    <div id="loginScreen" class="screen active">
+      <input id="username" placeholder="Your username">
+      <input id="groupName" placeholder="Group name">
+      <input id="groupPassword" type="password" placeholder="Group password">
+      <button id="joinBtn">Join Group</button>
+      <button id="createBtn">Create Group</button>
     </div>
 
-    <!-- CENTER: Chat -->
-    <div class="center">
-      <div class="chat-header">
-        <div style="display:flex;gap:12px;align-items:center">
-          <div class="small muted">#</div>
-          <div>
-            <div class="chat-title" id="roomTitle">general</div>
-            <div class="small muted" id="roomDesc">A place to chat</div>
+    <!-- Chat -->
+    <div id="chatScreen" class="screen">
+      <div class="chatLayout">
+        <div class="userList">
+          <h4>👥 Online Users</h4>
+          <div id="userList"></div>
+        </div>
+        <div class="chatArea" style="flex:1;display:flex;flex-direction:column;">
+          <div id="messages"></div>
+          <div id="typingArea"></div>
+          <div class="input-area">
+            <span class="emoji-picker">😀</span>
+            <input id="messageInput" placeholder="Type a message...">
+            <button id="sendBtn">Send</button>
           </div>
-        </div>
-        <div style="display:flex;gap:12px;align-items:center">
-          <div class="small muted" id="typingStatus"></div>
-          <div class="small muted">Theme</div>
-          <div class="theme-toggle">
-            <button id="toggleTheme" class="small-btn">🌑/☀️</button>
-            <button id="btnSound" class="small-btn">🔊</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="chat-body" id="messages">
-
-        <!-- messages appended here -->
-
-      </div>
-
-      <div class="composer">
-        <input id="fileUpload" type="file" class="file-input" accept="image/*,video/*,application/pdf" />
-        <button class="small-btn" id="btnAttach">📎</button>
-
-        <div contenteditable="true" id="input" class="input" role="textbox" aria-multiline="true" placeholder="Type a message..."></div>
-
-        <button class="small-btn" id="btnEmoji">😀</button>
-        <button class="btn" id="btnSend">Send</button>
-      </div>
-    </div>
-
-    <!-- RIGHT: pinned messages, settings, pinned -->
-    <div class="right">
-      <div class="section">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>Pinned</strong></div>
-          <div class="small muted" id="pinnedCount">0</div>
-        </div>
-        <div id="pinnedList" style="margin-top:8px;display:flex;flex-direction:column;gap:8px"></div>
-      </div>
-
-      <div class="section">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>Settings</strong></div>
-          <div class="small muted">quick</div>
-        </div>
-        <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
-          <label class="flex"><input type="checkbox" id="prefAutoScroll" checked /> <div class="small muted">Auto-scroll</div></label>
-          <label class="flex"><input type="checkbox" id="prefPlaySound" checked /> <div class="small muted">Play sounds</div></label>
-          <label class="flex"><input type="checkbox" id="prefShowAvatars" checked /> <div class="small muted">Show avatars</div></label>
-        </div>
-      </div>
-
-      <div class="section">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>About</strong></div>
-          <div class="small muted">v1.0</div>
-        </div>
-        <div class="small muted" style="margin-top:8px">
-          Maxed realtime chat demo. Replace Firebase config and enable Firestore, Realtime DB, Auth and Storage.
         </div>
       </div>
     </div>
   </div>
 
-  <!-- EMOJI PICKER (floating) -->
-  <div id="emojiPicker" style="position:fixed;display:none;z-index:9999;padding:8px;background:rgba(0,0,0,0.6);border-radius:12px;backdrop-filter:blur(6px)">
-    <!-- generated by JS -->
-  </div>
+  <!-- Emoji Picker -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
 
-  <!-- AUDIO -->
-  <audio id="sndSend" src="" preload="auto"></audio>
-  <audio id="sndRecv" src="" preload="auto"></audio>
-
-  <!-- FIREBASE MODULES -->
   <script type="module">
-    // ------------------ FIREBASE IMPORTS ------------------
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, doc, setDoc, onSnapshot, query, orderBy, serverTimestamp, updateDoc, getDoc, where, limit } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
-    import { getDatabase, ref as rtdbRef, onValue, set as rtdbSet, serverTimestamp as rtdbServerTs, onDisconnect, remove as rtdbRemove } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
-    import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
+    import { getDatabase, ref, push, set, get, child, onValue, onDisconnect, update } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
-    // ------------------ CONFIG - REPLACE WITH YOUR KEYS ------------------
     const firebaseConfig = {
-      apiKey: "REPLACE_WITH_YOUR_APIKEY",
-      authDomain: "REPLACE_WITH_YOUR_AUTHDOMAIN",
-      projectId: "REPLACE_WITH_YOUR_PROJECTID",
-      storageBucket: "REPLACE_WITH_YOUR_STORAGEBUCKET",
-      messagingSenderId: "REPLACE_WITH_MSG_SENDER_ID",
-      appId: "REPLACE_WITH_APP_ID",
-      databaseURL: "REPLACE_WITH_RTDB_URL"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "YOUR_PROJECT",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "XXXXXXX",
+      appId: "XXXXXXX"
     };
 
-    // initialize
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const rdb = getDatabase(app);
-    const storage = getStorage(app);
+    const db = getDatabase(app);
 
-    // ------------------ DOM REFERENCES ------------------
-    const btnGoogle = document.getElementById('btnGoogle');
-    const btnGuest = document.getElementById('btnGuest');
-    const meInfo = document.getElementById('meInfo');
-    const messagesDiv = document.getElementById('messages');
-    const btnSend = document.getElementById('btnSend');
-    const input = document.getElementById('input');
-    const btnAttach = document.getElementById('btnAttach');
-    const fileUpload = document.getElementById('fileUpload');
-    const btnEmoji = document.getElementById('btnEmoji');
-    const emojiPicker = document.getElementById('emojiPicker');
-    const typingStatus = document.getElementById('typingStatus');
-    const onlineList = document.getElementById('onlineList');
-    const onlineCount = document.getElementById('onlineCount');
-    const btnSearch = document.getElementById('btnSearch');
-    const searchInput = document.getElementById('searchInput');
-    const roomTitle = document.getElementById('roomTitle');
-    const pinnedList = document.getElementById('pinnedList');
-    const pinnedCount = document.getElementById('pinnedCount');
-    const prefAutoScroll = document.getElementById('prefAutoScroll');
-    const prefPlaySound = document.getElementById('prefPlaySound');
-    const prefShowAvatars = document.getElementById('prefShowAvatars');
+    const loginScreen=document.getElementById("loginScreen");
+    const chatScreen=document.getElementById("chatScreen");
+    const usernameInput=document.getElementById("username");
+    const groupNameInput=document.getElementById("groupName");
+    const groupPasswordInput=document.getElementById("groupPassword");
+    const joinBtn=document.getElementById("joinBtn");
+    const createBtn=document.getElementById("createBtn");
+    const messagesDiv=document.getElementById("messages");
+    const messageInput=document.getElementById("messageInput");
+    const sendBtn=document.getElementById("sendBtn");
+    const userList=document.getElementById("userList");
+    const typingArea=document.getElementById("typingArea");
+    const emojiBtn=document.querySelector(".emoji-picker");
 
-    // audio placeholders (small base64 beeps)
-    document.getElementById('sndSend').src = "data:audio/mpeg;base64,//uQZAAAAAAAAAAAAAAAAAAAAAA...";
-    document.getElementById('sndRecv').src = "data:audio/mpeg;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAAA...";
+    let currentGroup=null; let currentUser=null;
 
-    // ------------------ STATE ------------------
-    let currentUser = null;
-    let currentRoom = 'general';
-    let messagesUnsub = null;
-    let onlineUnsub = null;
-    let typingTimeout = null;
-    let presenceRef = null;
-    let typingRef = null;
-    let lastSeenAt = null;
-    let lastMessageIdSeen = null;
-    const emojiList = ["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","😉","😊","😍","🤩","😘","😎","🤓","😴","😡","👍","👎","🎉","🔥","❤️","💯"];
-
-    // ------------------ UTILITIES ------------------
-    function uidShort(uid){
-      if(!uid) return 'guest';
-      return uid.slice(0,6);
-    }
-    function timeShort(ts){
-      if(!ts) return '';
-      const d = ts instanceof Date ? ts : (ts.toDate ? ts.toDate() : new Date(ts));
-      return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    }
-    function createAvatar(name){
-      if(!name) return '?';
-      return name.trim().charAt(0).toUpperCase();
-    }
-    function randColorForName(name){
-      // deterministic color by hash
-      let h=0; for(let i=0;i<name.length;i++) h = (h<<5)-h+name.charCodeAt(i);
-      const colors = ['#6c8cff','#40e0d0','#8b5cf6','#ff8ab6','#ffd166','#7dd3fc','#a78bfa'];
-      return colors[Math.abs(h) % colors.length];
+    async function createGroup(){
+      const group=groupNameInput.value.trim();
+      const password=groupPasswordInput.value.trim();
+      if(!group||!password) return alert("Enter group & password!");
+      await set(ref(db,"groups/"+group+"/password"),password);
+      alert("Group created! Now join.");
     }
 
-    // ------------------ AUTH ------------------
-    const provider = new GoogleAuthProvider();
+    async function joinGroup(){
+      const group=groupNameInput.value.trim();
+      const password=groupPasswordInput.value.trim();
+      const name=usernameInput.value.trim();
+      if(!group||!password||!name) return alert("Fill all fields!");
+      const snapshot=await get(child(ref(db),"groups/"+group+"/password"));
+      if(!snapshot.exists()) return alert("Group not found!");
+      if(snapshot.val()!==password) return alert("Wrong password!");
+      currentGroup=group; currentUser=name;
 
-    btnGoogle.addEventListener('click', async () => {
-      try {
-        await signInWithPopup(auth, provider);
-      } catch(e){ console.error(e); alert('Sign in failed: '+ e.message) }
-    });
+      // Mark online
+      const userRef=ref(db,"groups/"+group+"/users/"+name);
+      await set(userRef,{status:"online"});
+      onDisconnect(userRef).set({status:"offline"});
 
-    btnGuest.addEventListener('click', async () => {
-      // create a guest user by asking name
-      const name = prompt('Enter a display name for guest user (min 2 chars):', 'Guest'+Math.floor(Math.random()*999));
-      if(!name || name.trim().length < 2) return alert('Please enter at least 2 characters');
-      // create ephemeral "guest" object locally; we won't use Firebase Auth
-      currentUser = { uid: 'guest-'+Math.random().toString(36).slice(2,9), displayName: name, photoURL: null };
-      onSignedIn(currentUser);
-    });
+      systemMessage(name+" joined the chat");
 
-    // React to auth state change (Google or other)
-    onAuthStateChanged(auth, user => {
-      if(user){
-        currentUser = { uid: user.uid, displayName: user.displayName || 'User'+uidShort(user.uid), photoURL: user.photoURL };
-        onSignedIn(currentUser);
-      } else {
-        // signed out - keep any guest if exists
-        // we do nothing here, waiting for guest login or google sign in
-        // onSignedOut();
-      }
-    });
+      loginScreen.classList.remove("active");
+      chatScreen.classList.add("active");
+      loadMessages(); loadUsers(); loadTyping();
+    }
 
-    // ------------------ PRESENCE & TYPING ------------------
-    function setupPresence(){
-      if(!currentUser || !currentUser.uid) return;
-      // presence path: /presence/{room}/{uid} = { name, avatar, online: true, lastSeen: ts }
-      presenceRef = rtdbRef(rdb, `presence/${currentRoom}/${currentUser.uid}`);
-      rtdbSet(presenceRef, { name: currentUser.displayName, avatar: createAvatar(currentUser.displayName), color: randColorForName(currentUser.displayName), online: true, lastSeen: Date.now() });
-      // ensure removal on disconnect
-      onDisconnect(presenceRef);
-      // onDisconnect remove
-      // onDisconnect(presenceRef).remove(); // but our helper above sends onDisconnect in older API; we used onDisconnect variable earlier alias? we used onDisconnect import in header, but we didn't store it — quick approach: use rtdbRef and set onDisconnect using old compat? Instead, we will register simple window unload to set offline.
-      window.addEventListener('beforeunload', () => {
-        try { rtdbSet(rtdbRef(rdb, `presence/${currentRoom}/${currentUser.uid}`), { name: currentUser.displayName, online:false, lastSeen: Date.now() }); } catch(e){/*ignore*/ }
+    function systemMessage(text){
+      const sysRef=push(ref(db,"groups/"+currentGroup+"/messages"));
+      set(sysRef,{name:"SYSTEM",text,time:new Date().toLocaleTimeString(),system:true});
+    }
+
+    function sendMessage(){
+      if(!messageInput.value.trim()) return;
+      push(ref(db,"groups/"+currentGroup+"/messages"),{
+        name:currentUser,text:messageInput.value,time:new Date().toLocaleTimeString(),seenBy:{[currentUser]:true}
       });
-
-      // subscribe to presence updates
-      if(onlineUnsub) onlineUnsub(); // no-op placeholder
-      const pRef = rtdbRef(rdb, `presence/${currentRoom}`);
-      onValue(pRef, snap => {
-        const val = snap.val() || {};
-        renderOnlineList(val);
-      });
+      messageInput.value=""; stopTyping();
     }
 
-    function renderOnlineList(obj){
-      onlineList.innerHTML = '';
-      const keys = Object.keys(obj || {});
-      let onlineCountNum = 0;
-      keys.forEach(k => {
-        const u = obj[k];
-        const row = document.createElement('div'); row.className = 'user-row';
-        const dot = document.createElement('div'); dot.className = 'dot'; dot.style.background = (u && u.online) ? 'linear-gradient(90deg,#22c55e,#16a34a)' : 'gray';
-        if(u && u.online) onlineCountNum++;
-        const av = document.createElement('div'); av.className='avatar'; av.textContent = (u && u.name) ? u.name.charAt(0).toUpperCase() : '?'; av.style.background = randColorForName((u && u.name) || 'x');
-        const nm = document.createElement('div'); nm.innerHTML = `<div class="user-name">${(u && u.name) || 'Unknown'}</div><div class="small muted">${u && u.online ? 'online' : 'offline'}</div>`;
-        row.appendChild(av); row.appendChild(nm);
-        onlineList.appendChild(row);
-      });
-      onlineCount.textContent = onlineCountNum;
-    }
-
-    // typing path: /typing/{room}/{uid} = name
-    let typingTimer = null;
-    function sendTypingSignal(){
-      if(!currentUser) return;
-      const tRef = rtdbRef(rdb, `typing/${currentRoom}/${currentUser.uid}`);
-      rtdbSet(tRef, { name: currentUser.displayName, ts: Date.now() });
-      // remove when user stops typing (we'll set a timeout)
-      if(typingTimer) clearTimeout(typingTimer);
-      typingTimer = setTimeout(()=> {
-        rtdbSet(tRef, null);
-      }, 1500);
-    }
-    // show typing statuses
-    const typingRefSub = rtdbRef(rdb, `typing/${currentRoom}`);
-    onValue(typingRefSub, snap => {
-      const val = snap.val() || {};
-      const names = Object.values(val).map(v => v.name).filter(Boolean);
-      if(names.length) typingStatus.textContent = names.join(', ') + (names.length===1 ? ' is typing...' : ' are typing...');
-      else typingStatus.textContent = '';
-    });
-
-    // ------------------ MESSAGES (Firestore) ------------------
-    // messages collection path: rooms/{room}/messages
-    async function sendMessage({ text=null, fileURL=null, fileName=null, pinned=false } = {}){
-      if(!currentUser) return alert('Sign in first');
-      if(!(text && text.trim()) && !fileURL) return;
-      const messagesCol = collection(db, `rooms/${currentRoom}/messages`);
-      try{
-        const docRef = await addDoc(messagesCol, {
-          uid: currentUser.uid,
-          name: currentUser.displayName,
-          avatar: createAvatar(currentUser.displayName),
-          color: randColorForName(currentUser.displayName),
-          text: text || '',
-          fileURL: fileURL || null,
-          fileName: fileName || null,
-          pinned: pinned || false,
-          reactions: {},
-          seenBy: {},
-          createdAt: serverTimestamp()
-        });
-        // play sound
-        if(prefPlaySound.checked) document.getElementById('sndSend').play().catch(()=>{});
-        return docRef.id;
-      }catch(e){ console.error('sendMessage', e) }
-    }
-
-    function formatMessageElement(docSnap){
-      const msg = docSnap.data();
-      const id = docSnap.id;
-      const isSelf = currentUser && currentUser.uid === msg.uid;
-      const el = document.createElement('div');
-      el.className = 'message ' + (isSelf ? 'right' : 'left');
-      el.dataset.id = id;
-
-      // avatar (hide if pref unchecked)
-      const av = document.createElement('div');
-      av.className='avatar';
-      av.textContent = msg.avatar || (msg.name ? msg.name.charAt(0).toUpperCase() : '?');
-      av.style.background = msg.color || randColorForName(msg.name || 'x');
-      if(!prefShowAvatars.checked) av.style.display = 'none';
-
-      const bubble = document.createElement('div'); bubble.className='bubble';
-
-      const meta = document.createElement('div'); meta.className='meta';
-      const who = document.createElement('div'); who.className='who'; who.textContent = msg.name || 'Unknown';
-      const when = document.createElement('div'); when.className='when'; when.textContent = msg.createdAt ? timeShort(msg.createdAt) : '';
-      meta.appendChild(who); meta.appendChild(when);
-
-      const text = document.createElement('div'); text.className='text'; text.textContent = msg.text || '';
-
-      // file preview
-      let fileNode = null;
-      if(msg.fileURL){
-        const f = document.createElement('img'); f.className='img-preview'; f.src = msg.fileURL; f.alt = msg.fileName || 'file';
-        f.addEventListener('load', ()=> { /* nice */ });
-        fileNode = f;
-      }
-
-      // actions: react, edit, delete, pin
-      const actions = document.createElement('div'); actions.className='actions';
-      const reactBtn = document.createElement('button'); reactBtn.className='action-btn'; reactBtn.title='React'; reactBtn.textContent = '🙂';
-      const pinBtn = document.createElement('button'); pinBtn.className='action-btn'; pinBtn.textContent = msg.pinned ? '📌' : '📌';
-      const moreBtn = document.createElement('button'); moreBtn.className='action-btn'; moreBtn.textContent = '⋯';
-
-      actions.appendChild(reactBtn); actions.appendChild(pinBtn); actions.appendChild(moreBtn);
-
-      // reactions area
-      const reactionsWrap = document.createElement('div'); reactionsWrap.className='reactions';
-      if(msg.reactions){
-        for(const [emoji, users] of Object.entries(msg.reactions || {})){
-          const rc = document.createElement('div'); rc.className='reaction'; rc.textContent = `${emoji} ${Object.keys(users).length}`;
-          reactionsWrap.appendChild(rc);
-        }
-      }
-
-      // seen indicator (basic)
-      const seen = document.createElement('div'); seen.className='small muted'; seen.textContent = (msg.seenBy && Object.keys(msg.seenBy).length) ? `${Object.keys(msg.seenBy).length} seen` : '';
-
-      // assemble bubble
-      bubble.appendChild(meta);
-      if(text) bubble.appendChild(text);
-      if(fileNode) bubble.appendChild(fileNode);
-      bubble.appendChild(reactionsWrap);
-      bubble.appendChild(actions);
-      bubble.appendChild(seen);
-
-      // context menu behaviors
-      moreBtn.addEventListener('click', async () => {
-        const menu = ['Edit','Delete','Copy Text'];
-        const chosen = prompt(`Type: edit / delete / copy\nAvailable: ${menu.join(', ')}`);
-        if(!chosen) return;
-        if(chosen.toLowerCase().includes('edit')){
-          if(msg.uid !== currentUser.uid) return alert('Only message owner can edit');
-          const newText = prompt('Edit message text:', msg.text);
-          if(newText !== null){
-            await updateDoc(doc(db, `rooms/${currentRoom}/messages`, id), { text: newText });
+    function loadMessages(){
+      onValue(ref(db,"groups/"+currentGroup+"/messages"),snap=>{
+        messagesDiv.innerHTML="";
+        snap.forEach(child=>{
+          const msg=child.val();
+          const div=document.createElement("div");
+          if(msg.system){ div.className="system"; div.textContent=msg.text; }
+          else{
+            div.className="msg"+(msg.name===currentUser?" self":"");
+            div.innerHTML=`<strong>${msg.name}</strong>: ${msg.text}<div class="seen">✔✔</div>`;
           }
-        } else if(chosen.toLowerCase().includes('delete')){
-          if(msg.uid !== currentUser.uid) return alert('Only owner can delete');
-          if(confirm('Delete message?')) {
-            await updateDoc(doc(db, `rooms/${currentRoom}/messages`, id), { text: '[deleted]', deleted: true });
+          messagesDiv.appendChild(div);
+        });
+        messagesDiv.scrollTop=messagesDiv.scrollHeight;
+      });
+    }
+
+    function loadUsers(){
+      onValue(ref(db,"groups/"+currentGroup+"/users"),snap=>{
+        userList.innerHTML="";
+        snap.forEach(child=>{
+          const u=child.key; const val=child.val();
+          const div=document.createElement("div");
+          div.className="user "+(val.status==="online"?"online":"offline");
+          div.textContent=u;
+          userList.appendChild(div);
+        });
+      });
+    }
+
+    function startTyping(){
+      set(ref(db,"groups/"+currentGroup+"/typing/"+currentUser),true);
+    }
+    function stopTyping(){
+      set(ref(db,"groups/"+currentGroup+"/typing/"+currentUser),false);
+    }
+    function loadTyping(){
+      onValue(ref(db,"groups/"+currentGroup+"/typing"),snap=>{
+        typingArea.innerHTML="";
+        snap.forEach(child=>{
+          if(child.val()===true && child.key!==currentUser){
+            const div=document.createElement("div");
+            div.className="typing";
+            div.textContent=child.key+" is typing...";
+            typingArea.appendChild(div);
           }
-        } else if(chosen.toLowerCase().includes('copy')){
-          await navigator.clipboard.writeText(msg.text || '');
-          alert('Copied text');
-        }
-      });
-
-      // react button: open simple picker (use global emojiList)
-      reactBtn.addEventListener('click', async () => {
-        const pick = prompt('Enter emoji to react with (e.g. 😄)', '👍');
-        if(!pick) return;
-        const msgDoc = doc(db, `rooms/${currentRoom}/messages`, id);
-        // add reaction: reactions.emoji.uid = true
-        // optimistic local effect (Firestore update)
-        const updateObj = {};
-        updateObj[`reactions.${pick}.${currentUser.uid}`] = true;
-        await updateDoc(msgDoc, updateObj);
-      });
-
-      pinBtn.addEventListener('click', async () => {
-        if(msg.uid !== currentUser.uid) {
-          // allow pin by owner or anyone? we'll allow owner only for now
-          // toggle pinned
-        }
-        const msgDoc = doc(db, `rooms/${currentRoom}/messages`, id);
-        await updateDoc(msgDoc, { pinned: !msg.pinned });
-      });
-
-      // mark seen when element enters viewport (basic)
-      const observer = new IntersectionObserver(async entries => {
-        for(const entry of entries){
-          if(entry.isIntersecting){
-            // mark seen
-            try{
-              const msgDoc = doc(db, `rooms/${currentRoom}/messages`, id);
-              const updateObj = {};
-              updateObj[`seenBy.${currentUser.uid}`] = true;
-              await updateDoc(msgDoc, updateObj);
-              // play receive sound if not own message
-              if(prefPlaySound.checked && !isSelf) document.getElementById('sndRecv').play().catch(()=>{});
-            }catch(e){/*ignore*/ }
-          }
-        }
-      }, { threshold: 0.7 });
-      observer.observe(bubble);
-
-      // assemble wrapper: avatar + bubble
-      if(isSelf){
-        el.appendChild(bubble);
-        el.appendChild(av);
-      } else {
-        el.appendChild(av);
-        el.appendChild(bubble);
-      }
-      // smooth scroll
-      return el;
-    }
-
-    // subscribe to messages for current room
-    function subscribeMessages(){
-      if(messagesUnsub) messagesUnsub(); // detach previous
-      const msgsCol = collection(db, `rooms/${currentRoom}/messages`);
-      const q = query(msgsCol, orderBy('createdAt', 'asc'));
-      messagesUnsub = onSnapshot(q, snapshot => {
-        messagesDiv.innerHTML = '';
-        const pinned = [];
-        snapshot.forEach(docSnap => {
-          const data = docSnap.data();
-          const el = formatMessageElement(docSnap);
-          if(data && data.pinned) pinned.push(el);
-          messagesDiv.appendChild(el);
         });
-        // pinned list
-        pinnedList.innerHTML = '';
-        pinned.forEach(pe => {
-          pinnedList.appendChild(pe.cloneNode(true));
-        });
-        pinnedCount.textContent = pinned.length;
-        // autoscroll
-        if(prefAutoScroll.checked) messagesDiv.scrollTo({ top: messagesDiv.scrollHeight, behavior: 'smooth' });
       });
     }
 
-    // ------------------ FILE UPLOAD ------------------
-    btnAttach.addEventListener('click', ()=> fileUpload.click());
-    fileUpload.addEventListener('change', async (ev) => {
-      const file = ev.target.files[0];
-      if(!file) return;
-      const id = 'upload_' + Date.now();
-      const path = `rooms/${currentRoom}/uploads/${id}_${file.name}`;
-      const sRef = storageRef(storage, path);
-      const uploadTask = uploadBytesResumable(sRef, file);
-      // show a minimal local preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const preview = document.createElement('img'); preview.className='img-preview'; preview.src = e.target.result;
-        messagesDiv.appendChild(preview);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      };
-      if(file.type.startsWith('image/')) reader.readAsDataURL(file);
-      uploadTask.on('state_changed', snapshot => {
-        // progress...
-      }, error => {
-        alert('Upload failed: '+ error.message);
-      }, async ()=> {
-        const url = await getDownloadURL(uploadTask.snapshot.ref);
-        await sendMessage({ fileURL: url, fileName: file.name, text: '' });
+    // Events
+    createBtn.addEventListener("click",createGroup);
+    joinBtn.addEventListener("click",joinGroup);
+    sendBtn.addEventListener("click",sendMessage);
+    messageInput.addEventListener("keypress",e=>{
+      if(e.key==="Enter") sendMessage();
+      else startTyping();
+    });
+    messageInput.addEventListener("blur",stopTyping);
+
+    // Emoji picker
+    emojiBtn.addEventListener("click",()=>{
+      const picker=document.createElement("emoji-picker");
+      picker.style.position="absolute"; picker.style.bottom="70px"; picker.style.right="30px";
+      picker.addEventListener("emoji-click",event=>{
+        messageInput.value+=event.detail.unicode;
+        picker.remove();
       });
+      document.body.appendChild(picker);
     });
-
-    // ------------------ EMOJI PICKER ------------------
-    btnEmoji.addEventListener('click', (e) => {
-      if(emojiPicker.style.display === 'block'){ emojiPicker.style.display = 'none'; return; }
-      // render
-      emojiPicker.innerHTML = '';
-      Object.values(emojiList).forEach(emo => {
-        const but = document.createElement('button'); but.textContent = emo;
-        but.style.fontSize = '20px'; but.style.padding='6px'; but.style.border='none'; but.style.borderRadius='8px'; but.style.margin='4px'; but.style.cursor='pointer';
-        but.addEventListener('click', ()=> {
-          input.innerText += emo + ' ';
-          emojiPicker.style.display = 'none';
-          input.focus();
-        });
-        emojiPicker.appendChild(but);
-      });
-      // position near button
-      const rect = btnEmoji.getBoundingClientRect();
-      emojiPicker.style.left = (rect.left) + 'px';
-      emojiPicker.style.top = (rect.top - 240) + 'px';
-      emojiPicker.style.display = 'block';
-    });
-    document.addEventListener('click', (e) => {
-      if(!emojiPicker.contains(e.target) && e.target !== btnEmoji) emojiPicker.style.display = 'none';
-    });
-
-    // ------------------ COMPOSER EVENTS ------------------
-    input.addEventListener('input', (e) => {
-      sendTypingSignal();
-    });
-    input.addEventListener('keydown', (e) => {
-      if(e.key === 'Enter' && !e.shiftKey){
-        e.preventDefault();
-        const msg = input.innerText.trim();
-        if(msg) { sendMessage({ text: msg }); input.innerText = ''; }
-      }
-    });
-    btnSend.addEventListener('click', ()=> {
-      const msg = input.innerText.trim();
-      if(msg) { sendMessage({ text: msg }); input.innerText = ''; }
-    });
-
-    // ------------------ SEARCH ------------------
-    btnSearch.addEventListener('click', async ()=> {
-      const qText = searchInput.value.trim().toLowerCase();
-      if(!qText) return alert('Type search term');
-      // naive local search: query Firestore for text matches (requires indexing if advanced)
-      // We'll fetch last 100 messages and filter client-side
-      const msgsCol = collection(db, `rooms/${currentRoom}/messages`);
-      const q = query(msgsCol, orderBy('createdAt','desc'), limit(100));
-      const snap = await (await import("https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js")).getDocs(q).catch(()=>null);
-      if(!snap) return alert('Search failed');
-      const results = [];
-      snap.forEach(d => {
-        const txt = (d.data().text || '').toLowerCase();
-        if(txt.includes(qText)) results.push(d);
-      });
-      messagesDiv.innerHTML = '';
-      if(results.length===0) messagesDiv.innerHTML = `<div class="system">No results</div>`;
-      else results.reverse().forEach(d => messagesDiv.appendChild(formatMessageElement(d)));
-    });
-
-    // ------------------ THEME / PREFS ------------------
-    document.getElementById('toggleTheme').addEventListener('click', ()=> {
-      document.body.classList.toggle('light-theme');
-      // trigger small 3D flip
-      document.querySelector('.app').style.transform = 'scale(0.995) rotateX(1deg)';
-      setTimeout(()=> document.querySelector('.app').style.transform = 'none', 260);
-    });
-
-    document.getElementById('btnSound').addEventListener('click', ()=> {
-      prefPlaySound.checked = !prefPlaySound.checked;
-    });
-
-    // ------------------ AFTER SIGN IN ------------------
-    async function onSignedIn(user){
-      // display
-      meInfo.innerHTML = `<strong>${user.displayName}</strong> · <span class="muted">${uidShort(user.uid)}</span>`;
-      // setup presence
-      setupPresence();
-      // join room
-      subscribeMessages();
-      // system join message
-      await sendSystem(`${user.displayName} joined the chat`);
-    }
-
-    async function sendSystem(text){
-      if(!currentUser) return;
-      const messagesCol = collection(db, `rooms/${currentRoom}/messages`);
-      await addDoc(messagesCol, {
-        system: true,
-        text,
-        createdAt: serverTimestamp()
-      });
-    }
-
-    // ------------------ INITIALIZE (minimal) ------------------
-    // Note: user may be guest or signed in via Google. If neither, they can sign in.
-    console.log('App started - replace firebaseConfig with your keys to run realtime features.');
-
-    // quick UI helpers: click channel changes room
-    document.querySelectorAll('.channel').forEach(ch => {
-      ch.addEventListener('click', (e)=>{
-        document.querySelectorAll('.channel').forEach(c=>c.classList.remove('active'));
-        ch.classList.add('active');
-        currentRoom = ch.dataset.channel || 'general';
-        roomTitle.textContent = ch.textContent.trim().replace('#','');
-        // re-run presence & messages
-        setupPresence();
-        subscribeMessages();
-      });
-    });
-
-    // small helper: create system welcome if no auth
-    (async ()=> {
-      // If no auth and no guest, auto open sign in prompt? leave to user
-    })();
-
-    // ------------------ FIRESTORE SECURITY NOTES ------------------
-    // Configure your Firestore rules to allow reads/writes only to authenticated users or implement
-    // stricter rules for production. This demo expects a dev/test environment.
-
-    // ------------------ END FILE ------------------
-
   </script>
 </body>
 </html>
