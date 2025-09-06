@@ -1,118 +1,527 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Friend Chat (Discord Clone)</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Discord-like Group Chat (Password Protected)</title>
+  <meta name="description" content="Discord-style chat UI with password-protected groups using Firebase Realtime Database" />
+
+  <!-- ----------------- EXTENSIVE CSS (Discord-like) ----------------- -->
   <style>
-    /* ====== Styles (same as before) ====== */
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: Arial, sans-serif; background:#202225; color:#fff; display:flex; height:100vh; }
-    button { cursor:pointer; }
+  /* ===========================================================
+     Discord-like Chat — Detailed CSS
+     This CSS is intentionally long and feature-rich to give a
+     polished, Discord-like appearance and behavior.
+     =========================================================== */
 
-    .sidebar { width:250px; background:#2f3136; display:flex; flex-direction:column; padding:10px; }
-    .sidebar h2 { color:#b9bbbe; margin-bottom:10px; }
-    .channels, .groups { flex:1; overflow-y:auto; margin-bottom:10px; }
-    .channel, .group { padding:8px; margin:3px 0; border-radius:5px; cursor:pointer; }
-    .channel:hover, .group:hover { background:#3a3c42; }
-    .active { background:#5865f2; }
-    .sidebar-footer { display:flex; gap:5px; }
-    .sidebar-footer button { flex:1; padding:6px; border:none; border-radius:5px; background:#5865f2; color:white; font-size:14px; }
-    .sidebar-footer button.ghost { background:#3a3c42; }
+  /* Reset & base */
+  :root{
+    --bg-1:#0f1720;        /* page background */
+    --bg-2:#1b1f25;        /* container dark */
+    --panel:#2f3438;       /* panel background */
+    --muted:#8a8f93;       /* muted text */
+    --accent:#5865f2;      /* discord-like accent */
+    --accent-2:#4752c4;
+    --accent-3:#7289da;
+    --white:#e6eef8;
+    --glass: rgba(255,255,255,0.03);
+    --card: #23272a;
+    --success:#3ba55d;
+    --danger:#f04747;
+    --shadow: 0 6px 20px rgba(2,6,23,0.6);
+    --radius-lg: 12px;
+    --radius-md: 8px;
+    --radius-sm: 6px;
+    --max-width:1200px;
+    --font-sans: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
 
-    .chat { flex:1; display:flex; flex-direction:column; background:#36393f; }
-    .chat-header { background:#2f3136; padding:10px; display:flex; justify-content:space-between; align-items:center; }
-    .chat-messages { flex:1; padding:15px; overflow-y:auto; }
-    .message { margin-bottom:10px; }
-    .message strong { color:#dcddde; }
-    .chat-input { display:flex; padding:10px; background:#40444b; }
-    .chat-input input { flex:1; padding:10px; border:none; border-radius:5px; outline:none; }
-    .chat-input button { margin-left:10px; padding:10px 15px; border:none; border-radius:5px; background:#5865f2; color:white; }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:var(--font-sans);
+    background: linear-gradient(180deg, #0b0f13 0%, #0f1720 100%);
+    color:var(--white);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    padding:28px;
+    gap:20px;
+  }
 
-    .modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; z-index:999; }
-    .hidden { display:none; }
-    .modal .box { background:#2f3136; padding:20px; border-radius:10px; width:300px; text-align:center; }
-    .modal .box input { width:100%; margin:5px 0; padding:8px; border:none; border-radius:5px; }
-    .modal .box button { margin-top:10px; padding:8px 12px; border:none; border-radius:5px; background:#5865f2; color:white; }
+  /* App wrapper */
+  .app {
+    width:100%;
+    max-width:var(--max-width);
+    display:grid;
+    grid-template-columns: 260px 1fr 260px;
+    gap:18px;
+    align-items:start;
+    box-shadow:var(--shadow);
+  }
 
-    #callModal .modal-content { background:#2f3136; padding:15px; border-radius:10px; text-align:center; width:500px; }
-    #localVideo, #remoteVideo { width:45%; margin:5px; border-radius:8px; background:black; }
-    #endCallBtn { margin-top:10px; background:red; border:none; padding:8px 15px; border-radius:5px; color:white; }
+  /* Left sidebar (server/channel list) */
+  .sidebar {
+    background: linear-gradient(180deg,#111317 0%, #13161a 100%);
+    border-radius: var(--radius-lg);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    min-height:640px;
+    height: calc(100vh - 56px);
+    border:1px solid rgba(255,255,255,0.03);
+  }
+
+  .sidebar .brand {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:16px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    background: linear-gradient(90deg, rgba(255,255,255,0.02), transparent);
+  }
+
+  .brand .logo {
+    width:40px;
+    height:40px;
+    border-radius:10px;
+    background: linear-gradient(135deg,var(--accent),var(--accent-3));
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-weight:700;
+    color:white;
+    box-shadow:0 2px 8px rgba(88,101,242,0.18);
+  }
+
+  .brand h1{
+    font-size:15px;
+    margin:0;
+    font-weight:700;
+    color:var(--white);
+  }
+
+  .channels {
+    padding:12px;
+    overflow:auto;
+  }
+
+  .channels h3{
+    font-size:12px;
+    color:var(--muted);
+    margin:12px 8px;
+    letter-spacing:0.6px;
+    text-transform:uppercase;
+  }
+
+  .channel {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 10px;
+    border-radius:8px;
+    color:var(--white);
+    cursor:pointer;
+    transition:all .12s ease;
+    margin:6px 0;
+    user-select:none;
+  }
+  .channel:hover{ background: rgba(255,255,255,0.02); transform:translateY(-1px) }
+  .channel.active{
+    background: linear-gradient(90deg, rgba(88,101,242,0.12), rgba(71,82,196,0.05));
+    color:var(--accent-3);
+    box-shadow: inset 0 0 0 1px rgba(88,101,242,0.06);
+  }
+
+  .channel .hash{ font-weight:700; color:var(--accent-3) }
+  .channel .label{ font-size:14px; color:var(--white) }
+
+  /* New group button */
+  .sidebar .controls {
+    padding:12px;
+    border-top:1px solid rgba(255,255,255,0.02);
+    display:flex;
+    gap:8px;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .btn {
+    background:var(--accent);
+    border:none;
+    color:white;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+    box-shadow:0 6px 18px rgba(88,101,242,0.18);
+    transition:transform .12s ease,opacity .12s ease;
+  }
+  .btn:active{ transform:translateY(1px) }
+  .btn.secondary {
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.04);
+    color:var(--white);
+    box-shadow:none;
+  }
+
+  /* Center chat column */
+  .chat-panel {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+    border-radius: var(--radius-lg);
+    overflow:hidden;
+    min-height:640px;
+    height: calc(100vh - 56px);
+    display:flex;
+    flex-direction:column;
+    border:1px solid rgba(255,255,255,0.03);
+  }
+
+  .chat-header {
+    padding:16px 18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-bottom:1px solid rgba(255,255,255,0.03);
+    background: linear-gradient(90deg, rgba(0,0,0,0.06), rgba(255,255,255,0.01));
+  }
+
+  .chat-title {
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+
+  .server-avatar {
+    width:40px;height:40px;border-radius:8px;
+    background: linear-gradient(135deg,var(--accent-3),var(--accent));
+    display:flex;align-items:center;justify-content:center;font-weight:700;color:white;
+    box-shadow:0 4px 14px rgba(0,0,0,0.4);
+  }
+
+  .chat-title h2{ margin:0; font-size:16px; font-weight:700 }
+  .chat-title p{ margin:0; color:var(--muted); font-size:12px }
+
+  /* message area scroll */
+  .messages {
+    flex:1;
+    overflow-y:auto;
+    padding:20px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.02));
+    scroll-behavior:smooth;
+  }
+
+  /* message row */
+  .message-row {
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    margin-bottom:14px;
+    transition: background .12s ease;
+    padding:4px 6px;
+    border-radius:8px;
+  }
+
+  .message-row:hover {
+    background: rgba(255,255,255,0.01);
+  }
+
+  .avatar {
+    width:44px;height:44px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-weight:700;color:white;
+    flex-shrink:0;
+    font-size:16px;
+    box-shadow: 0 4px 10px rgba(2,6,23,0.6), inset 0 -4px 10px rgba(0,0,0,0.15);
+  }
+
+  .message-body {
+    flex:1;
+    min-width:0;
+  }
+
+  .meta {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:4px;
+  }
+
+  .username {
+    font-weight:700;
+    color:var(--white);
+    font-size:14px;
+  }
+
+  .username .tag {
+    font-weight:500;
+    color:var(--muted);
+    margin-left:6px;
+    font-size:12px;
+  }
+
+  .msg-text {
+    color: #dbe6f7;
+    font-size:15px;
+    line-height:1.45;
+    white-space:pre-wrap;
+  }
+
+  .timestamp {
+    font-size:11px;
+    color:var(--muted);
+    margin-left:auto;
+    padding-left:8px;
+  }
+
+  /* message actions (reply, react) */
+  .msg-actions {
+    display:flex;
+    gap:8px;
+    opacity:0;
+    transform:translateY(-4px);
+    transition:opacity .12s ease, transform .12s ease;
+  }
+  .message-row:hover .msg-actions { opacity:1; transform:translateY(0) }
+
+  .msg-action {
+    background: rgba(255,255,255,0.02);
+    padding:6px 8px;
+    border-radius:6px;
+    color:var(--muted);
+    font-size:13px;
+    cursor:pointer;
+    border:1px solid rgba(255,255,255,0.02);
+  }
+  .msg-action:hover{ background: rgba(255,255,255,0.03); color:var(--white) }
+
+  /* input area */
+  .composer {
+    padding:14px;
+    border-top:1px solid rgba(255,255,255,0.03);
+    display:flex;
+    gap:10px;
+    align-items:center;
+    background:linear-gradient(180deg, rgba(0,0,0,0.02), transparent);
+  }
+
+  .composer .input {
+    flex:1;
+    display:flex;
+    gap:10px;
+    align-items:center;
+    background:var(--card);
+    padding:10px 12px;
+    border-radius:10px;
+    box-shadow: inset 0 -2px 8px rgba(0,0,0,0.35);
+  }
+
+  .composer input[type="text"]{
+    background:transparent;
+    border:none;
+    outline:none;
+    color:var(--white);
+    font-size:14px;
+    width:100%;
+  }
+
+  .icon-btn {
+    background:transparent;
+    border:none;
+    cursor:pointer;
+    color:var(--muted);
+    padding:8px;
+    border-radius:8px;
+  }
+  .icon-btn:hover{ background:rgba(255,255,255,0.02); color:var(--white) }
+
+  /* right panel - member list */
+  .member-panel {
+    background: linear-gradient(180deg,#181b1f, #151719);
+    border-radius: var(--radius-lg);
+    overflow:hidden;
+    min-height:640px;
+    height: calc(100vh - 56px);
+    border:1px solid rgba(255,255,255,0.03);
+    display:flex;
+    flex-direction:column;
+  }
+
+  .member-panel .title {
+    padding:12px 14px;
+    border-bottom:1px solid rgba(255,255,255,0.02);
+    font-weight:700;
+    color:var(--white);
+  }
+
+  .members {
+    padding:10px;
+    overflow:auto;
+    flex:1;
+  }
+
+  .member {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px;
+    border-radius:8px;
+    transition:background .12s;
+  }
+  .member:hover{ background: rgba(255,255,255,0.01) }
+
+  .member .m-avatar{ width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700; }
+  .member .m-name{ font-weight:600; font-size:14px; color:var(--white) }
+  .member .m-meta{ font-size:12px; color:var(--muted) }
+
+  /* Modal (create/join group) */
+  .modal-backdrop {
+    position:fixed;left:0;top:0;right:0;bottom:0;
+    background:rgba(0,0,0,0.6);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+    padding:20px;
+  }
+  .modal {
+    width:100%;
+    max-width:520px;
+    background:#0f1113;
+    border-radius:12px;
+    padding:18px;
+    border:1px solid rgba(255,255,255,0.03);
+    box-shadow:0 12px 50px rgba(0,0,0,0.8);
+  }
+  .modal h3{ margin:0 0 8px 0; color:var(--white) }
+  .modal label{ display:block; font-size:13px; color:var(--muted); margin-top:10px }
+  .modal input{ width:100%; padding:10px; margin-top:6px; border-radius:8px; border:none; background:#131416; color:var(--white) }
+  .modal .row{ display:flex; gap:10px; margin-top:12px }
+  .modal .row .btn{ flex:1 }
+
+  .modal.show{ display:flex; }
+
+  /* empty state */
+  .empty {
+    padding:40px;
+    text-align:center;
+    color:var(--muted);
+  }
+
+  /* responsive */
+  @media (max-width: 980px) {
+    .app { grid-template-columns: 1fr; height: auto; padding-bottom: 30px; gap:12px; }
+    .sidebar, .member-panel { display:none }
+    .chat-panel { border-radius:12px; }
+  }
+
+  /* accessibility focus */
+  .channel:focus, .btn:focus, .icon-btn:focus, .msg-action:focus { outline:2px solid rgba(88,101,242,0.18); outline-offset:2px }
+  /* ===========================================================
+     End CSS
+     =========================================================== */
   </style>
 </head>
 <body>
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h2>Groups</h2>
-    <div id="groupsList" class="groups"></div>
-    <h2>Channels</h2>
-    <div id="channelsList" class="channels"></div>
-    <div class="sidebar-footer">
-      <button id="openCreateGroup">+ Group</button>
-      <button id="openJoinGroup" class="ghost">Join</button>
-      <button id="openCreateChannel" class="ghost">+ Channel</button>
+
+  <div class="app" role="application" aria-label="Discord style chat">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" aria-label="Navigation sidebar">
+      <div class="brand">
+        <div class="logo">FC</div>
+        <div>
+          <h1>FriendChat</h1>
+          <div style="font-size:12px;color:var(--muted)">Private groups</div>
+        </div>
+      </div>
+
+      <div class="channels" aria-live="polite">
+        <h3>Channels</h3>
+        <!-- Channels will be rendered here dynamically -->
+        <div id="channelsList">
+          <!-- placeholder: dynamic -->
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="openCreateBtn" class="btn">+ Create</button>
+        <button id="openJoinBtn" class="btn secondary">Join</button>
+      </div>
+    </aside>
+
+    <!-- CENTER CHAT -->
+    <main class="chat-panel" id="chatPanel">
+      <div class="chat-header">
+        <div class="chat-title">
+          <div class="server-avatar" id="serverAvatar">G</div>
+          <div>
+            <h2 id="groupTitle">Not in a group</h2>
+            <p id="groupSubtitle">Create or join a password-protected group to start chatting.</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="leaveGroupBtn" class="btn secondary">Leave</button>
+        </div>
+      </div>
+
+      <section class="messages" id="messages" aria-live="polite" role="log">
+        <div class="empty" id="emptyMsg">No group selected. Create or join a group to begin.</div>
+      </section>
+
+      <div class="composer" id="composer" aria-hidden="true">
+        <div class="input">
+          <input id="usernameInput" type="text" placeholder="Your display name" aria-label="Your display name">
+          <input id="messageInput" type="text" placeholder="Message #general" aria-label="Message input" />
+        </div>
+        <button id="sendBtn" class="btn">Send</button>
+      </div>
+    </main>
+
+    <!-- RIGHT MEMBER PANEL -->
+    <aside class="member-panel" aria-label="Members">
+      <div class="title">Members</div>
+      <div class="members" id="membersList">
+        <div style="padding:12px;color:var(--muted)">No group selected</div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- MODAL: Create / Join -->
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true">
+    <div class="modal" role="document" aria-labelledby="modalTitle">
+      <h3 id="modalTitle">Create / Join Group</h3>
+
+      <label for="modalGroup">Group name</label>
+      <input id="modalGroup" placeholder="e.g. my-awesome-repo">
+
+      <label for="modalPassword">Group password</label>
+      <input id="modalPassword" type="password" placeholder="Set a password to make it private">
+
+      <label for="modalUsername">Your display name</label>
+      <input id="modalUsername" placeholder="yourname">
+
+      <div class="row" style="margin-top:16px">
+        <button id="modalCreate" class="btn">Create Group</button>
+        <button id="modalJoin" class="btn secondary">Join Group</button>
+      </div>
+
+      <div style="margin-top:12px;color:var(--muted);font-size:13px">
+        Tip: share the group name and password with trusted friends only.
+      </div>
     </div>
   </div>
 
-  <!-- Chat -->
-  <div class="chat">
-    <div class="chat-header">
-      <span id="channelName">#general</span>
-      <button id="startCallBtn">📞 Call</button>
-    </div>
-    <div id="chatMessages" class="chat-messages"></div>
-    <div class="chat-input">
-      <input id="chatInput" placeholder="Type a message...">
-      <button id="sendBtn">Send</button>
-    </div>
-  </div>
-
-  <!-- Modals -->
-  <div id="createGroupModal" class="modal hidden">
-    <div class="box">
-      <h3>Create Group</h3>
-      <input id="newGroupName" placeholder="Group name">
-      <input id="newGroupPassword" placeholder="Password">
-      <button id="confirmGroupCreate">Create</button>
-      <button id="cancelGroupCreate">Cancel</button>
-    </div>
-  </div>
-
-  <div id="joinGroupModal" class="modal hidden">
-    <div class="box">
-      <h3>Join Group</h3>
-      <input id="joinGroupName" placeholder="Group name">
-      <input id="joinGroupPassword" placeholder="Password">
-      <button id="confirmJoinGroup">Join</button>
-      <button id="cancelJoinGroup">Cancel</button>
-    </div>
-  </div>
-
-  <div id="createChannelModal" class="modal hidden">
-    <div class="box">
-      <h3>Create Channel</h3>
-      <input id="newChannelName" placeholder="Channel name">
-      <button id="confirmChannelCreate">Create</button>
-      <button id="cancelChannelCreate">Cancel</button>
-    </div>
-  </div>
-
-  <div id="callModal" class="modal hidden">
-    <div class="modal-content">
-      <h3>Voice/Video Call</h3>
-      <video id="localVideo" autoplay playsinline muted></video>
-      <video id="remoteVideo" autoplay playsinline></video>
-      <br>
-      <button id="endCallBtn">End Call</button>
-    </div>
-  </div>
-
-  <!-- Firebase + Logic -->
+  <!-- ----------------- JAVASCRIPT (Firebase + UI logic) ----------------- -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-    import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+    import {
+      getDatabase, ref, push, onValue, set, get, child, remove, update
+    } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
-    // ✅ Correct Firebase config
+    /***** FIREBASE CONFIG - USE YOUR PROJECT VALUES (ALREADY SET) *****/
     const firebaseConfig = {
       apiKey: "AIzaSyD0OAOSTic5z4U4obChkOieVLtvhgmIfxU",
       authDomain: "friend-chat-eaabe.firebaseapp.com",
@@ -120,228 +529,379 @@
       projectId: "friend-chat-eaabe",
       storageBucket: "friend-chat-eaabe.appspot.com",
       messagingSenderId: "409498465855",
-      appId: "1:409498465855:web:bfec1da1a2f29a1f73aa8a"
+      appId: "1:409498465855:web:bfec1da1a2f29a1f73aa8a",
+      measurementId: "G-DHE9SKBE8L"
     };
 
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Elements
-    const groupsList = document.getElementById("groupsList");
-    const channelsList = document.getElementById("channelsList");
-    const chatMessages = document.getElementById("chatMessages");
-    const chatInput = document.getElementById("chatInput");
-    const sendBtn = document.getElementById("sendBtn");
-    const channelName = document.getElementById("channelName");
+    /***** UI ELEMENTS *****/
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const openCreateBtn = document.getElementById('openCreateBtn');
+    const openJoinBtn = document.getElementById('openJoinBtn');
+    const modalCreate = document.getElementById('modalCreate');
+    const modalJoin = document.getElementById('modalJoin');
+    const modalGroup = document.getElementById('modalGroup');
+    const modalPassword = document.getElementById('modalPassword');
+    const modalUsername = document.getElementById('modalUsername');
 
-    const openCreateGroupBtn = document.getElementById("openCreateGroup");
-    const createGroupModal = document.getElementById("createGroupModal");
-    const confirmGroupCreateBtn = document.getElementById("confirmGroupCreate");
-    const cancelGroupCreateBtn = document.getElementById("cancelGroupCreate");
-    const newGroupNameInput = document.getElementById("newGroupName");
-    const newGroupPasswordInput = document.getElementById("newGroupPassword");
+    const channelsList = document.getElementById('channelsList');
+    const groupTitle = document.getElementById('groupTitle');
+    const groupSubtitle = document.getElementById('groupSubtitle');
+    const serverAvatar = document.getElementById('serverAvatar');
+    const messagesEl = document.getElementById('messages');
+    const composer = document.getElementById('composer');
+    const usernameInput = document.getElementById('usernameInput');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const membersList = document.getElementById('membersList');
+    const leaveGroupBtn = document.getElementById('leaveGroupBtn');
+    const emptyMsg = document.getElementById('emptyMsg');
 
-    const openJoinGroupBtn = document.getElementById("openJoinGroup");
-    const joinGroupModal = document.getElementById("joinGroupModal");
-    const confirmJoinGroupBtn = document.getElementById("confirmJoinGroup");
-    const cancelJoinGroupBtn = document.getElementById("cancelJoinGroup");
-    const joinGroupNameInput = document.getElementById("joinGroupName");
-    const joinGroupPasswordInput = document.getElementById("joinGroupPassword");
-
-    const openCreateChannelBtn = document.getElementById("openCreateChannel");
-    const createChannelModal = document.getElementById("createChannelModal");
-    const confirmChannelCreateBtn = document.getElementById("confirmChannelCreate");
-    const cancelChannelCreateBtn = document.getElementById("cancelChannelCreate");
-    const newChannelNameInput = document.getElementById("newChannelName");
-
-    // State
+    /***** STATE *****/
     let currentGroup = null;
-    let currentChannel = "general";
+    let currentUser = null;
+    let messagesListenerUnsub = null;
+    let membersListenerUnsub = null;
 
-    // Helpers
-    function showModal(m) { m.classList.remove("hidden"); }
-    function hideModal(m) { m.classList.add("hidden"); }
+    /***** Helpers *****/
+    function sanitize(str){
+      if (str === undefined || str === null) return '';
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
 
-    // Group create
-    openCreateGroupBtn.addEventListener("click", () => showModal(createGroupModal));
-    cancelGroupCreateBtn.addEventListener("click", () => hideModal(createGroupModal));
-    confirmGroupCreateBtn.addEventListener("click", async () => {
-      const g = newGroupNameInput.value.trim();
-      const pw = newGroupPasswordInput.value.trim();
-      if (!g || !pw) return alert("Enter group name & password");
-      await set(ref(db, `groups/${g}/password`), pw);
-      await set(ref(db, `groups/${g}/channels/general`), true);
-      hideModal(createGroupModal);
-      loadGroups();
-    });
+    // deterministic color per name (like Discord)
+    function colorForName(name){
+      const colors = ["#f44336","#e91e63","#9c27b0","#673ab7","#3f51b5","#007bff","#03a9f4","#00bcd4","#009688","#4caf50","#8bc34a","#cddc39","#ffeb3b","#ffc107","#ff9800","#ff5722","#795548","#9e9e9e","#607d8b","#c2185b"];
+      let hash = 0;
+      for (let i=0;i<name.length;i++) hash = name.charCodeAt(i) + ((hash<<5)-hash);
+      return colors[Math.abs(hash) % colors.length];
+    }
 
-    // Group join
-    openJoinGroupBtn.addEventListener("click", () => showModal(joinGroupModal));
-    cancelJoinGroupBtn.addEventListener("click", () => hideModal(joinGroupModal));
-    confirmJoinGroupBtn.addEventListener("click", () => {
-      const g = joinGroupNameInput.value.trim();
-      const pw = joinGroupPasswordInput.value.trim();
-      if (!g || !pw) return;
-      onValue(ref(db, `groups/${g}/password`), (snap) => {
-        if (snap.exists() && snap.val() === pw) {
-          currentGroup = g;
-          loadChannels(g);
-          selectChannel("general");
-          hideModal(joinGroupModal);
-        } else alert("Wrong group or password");
-      }, { onlyOnce: true });
-    });
+    function initialsForName(name){
+      if (!name) return '?';
+      const parts = name.trim().split(' ').filter(Boolean);
+      if (parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+      return (parts[0].charAt(0)+parts[1].charAt(0)).toUpperCase();
+    }
 
-    // Channel create
-    openCreateChannelBtn.addEventListener("click", () => {
-      if (!currentGroup) return alert("Join or create a group first");
-      showModal(createChannelModal);
-    });
-    cancelChannelCreateBtn.addEventListener("click", () => hideModal(createChannelModal));
-    confirmChannelCreateBtn.addEventListener("click", async () => {
-      const ch = newChannelNameInput.value.trim();
-      if (!ch) return;
-      await set(ref(db, `groups/${currentGroup}/channels/${ch}`), true);
-      hideModal(createChannelModal);
-      loadChannels(currentGroup);
-    });
+    // UI helpers
+    function showModal(){ modalBackdrop.classList.add('show'); }
+    function hideModal(){ modalBackdrop.classList.remove('show'); }
+    function showComposer(){
+      composer.setAttribute('aria-hidden','false');
+      composer.style.display = 'flex';
+    }
+    function hideComposer(){
+      composer.setAttribute('aria-hidden','true');
+      composer.style.display = 'none';
+    }
 
-    // Load groups
-    function loadGroups() {
-      groupsList.innerHTML = "";
-      onValue(ref(db, "groups"), (snapshot) => {
-        groupsList.innerHTML = "";
+    /***** CHANNELS (groups) RENDERING *****/
+    function addChannelToList(groupName){
+      // avoid duplicates
+      if (document.getElementById('ch-'+groupName)) return;
+      const div = document.createElement('div');
+      div.className = 'channel';
+      div.id = 'ch-' + groupName;
+      div.innerHTML = `<span class="hash">#</span><span class="label">${sanitize(groupName)}</span>`;
+      div.addEventListener('click', ()=> {
+        openGroup(groupName);
+      });
+      channelsList.appendChild(div);
+    }
+
+    function clearChannelsList(){
+      channelsList.innerHTML = '';
+    }
+
+    /***** LOAD EXISTING GROUPS (names only) *****/
+    function loadGroupsList(){
+      // list groups under /groups
+      const groupsRef = ref(db, 'groups');
+      onValue(groupsRef, snapshot => {
+        clearChannelsList();
+        if (!snapshot.exists()){
+          // no groups yet
+          return;
+        }
         snapshot.forEach(child => {
-          const g = child.key;
-          const div = document.createElement("div");
-          div.className = "group";
-          div.textContent = g;
-          div.onclick = () => { currentGroup = g; loadChannels(g); selectChannel("general"); };
-          groupsList.appendChild(div);
+          const name = child.key;
+          addChannelToList(name);
         });
       });
     }
 
-    function loadChannels(g) {
-      channelsList.innerHTML = "";
-      onValue(ref(db, `groups/${g}/channels`), (snapshot) => {
-        channelsList.innerHTML = "";
-        snapshot.forEach(child => {
-          const ch = child.key;
-          const div = document.createElement("div");
-          div.className = "channel";
-          div.textContent = "#" + ch;
-          div.onclick = () => selectChannel(ch);
-          channelsList.appendChild(div);
-        });
-      });
+    /***** CREATE GROUP *****/
+    async function createGroup(){
+      const g = modalGroup.value.trim();
+      const pw = modalPassword.value;
+      const uname = modalUsername.value.trim();
+      if (!g || !pw || !uname) return alert('Fill group, password, and display name');
+
+      // write password to db
+      await set(ref(db, 'groups/' + g + '/password'), pw);
+      // feedback
+      alert('Group created: ' + g);
+      hideModal();
+      // auto-join
+      await joinGroup(g, pw, uname);
     }
 
-    // Messages
-    function selectChannel(ch) {
-      currentChannel = ch;
-      channelName.textContent = "#" + ch;
-      chatMessages.innerHTML = "";
-      onValue(ref(db, `groups/${currentGroup}/channels/${ch}/messages`), (snapshot) => {
-        chatMessages.innerHTML = "";
+    /***** JOIN GROUP *****/
+    async function joinGroupAction(){
+      const g = modalGroup.value.trim();
+      const pw = modalPassword.value;
+      const uname = modalUsername.value.trim();
+      if (!g || !pw || !uname) return alert('Fill group, password, and display name');
+      await joinGroup(g, pw, uname);
+      hideModal();
+    }
+
+    async function joinGroup(g, pw, uname){
+      // check group exists and password matches
+      const snap = await get(ref(db, 'groups/' + g + '/password'));
+      if (!snap.exists()){ return alert('Group not found'); }
+      const actual = snap.val();
+      if (String(actual) !== String(pw)){ return alert('Wrong password'); }
+
+      // set state
+      currentGroup = g;
+      currentUser = uname;
+      usernameInput.value = currentUser;
+      groupTitle.textContent = g;
+      groupSubtitle.textContent = 'Private group • ' + g;
+      serverAvatar.textContent = g.charAt(0).toUpperCase();
+      serverAvatar.style.background = colorForName(g);
+      // mark active channel in list
+      document.querySelectorAll('.channel').forEach(ch => ch.classList.remove('active'));
+      const chNode = document.getElementById('ch-' + g);
+      if (chNode) chNode.classList.add('active');
+
+      // show composer
+      showComposer();
+      emptyMsg.style.display = 'none';
+
+      // join: attach listeners
+      attachGroupListeners(g);
+      // Also add user to members list in DB (optional lightweight presence)
+      const memberRef = ref(db, 'groups/' + g + '/members/' + encodeURIComponent(currentUser));
+      await set(memberRef, { joinedAt: new Date().toISOString() });
+
+      // populate channels list (if not already)
+      addChannelToList(g);
+    }
+
+    /***** LEAVE GROUP *****/
+    async function leaveGroup(){
+      if (!currentGroup || !currentUser) return;
+      // remove presence entry
+      await remove(ref(db, 'groups/' + currentGroup + '/members/' + encodeURIComponent(currentUser)))
+        .catch(()=>{/*ignore*/});
+      detachGroupListeners();
+      currentGroup = null;
+      currentUser = null;
+      groupTitle.textContent = 'Not in a group';
+      groupSubtitle.textContent = 'Create or join a password-protected group to start chatting.';
+      serverAvatar.textContent = 'G';
+      serverAvatar.style.background = 'linear-gradient(135deg,var(--accent-3),var(--accent))';
+      hideComposer();
+      messagesEl.innerHTML = '<div class="empty">No group selected. Create or join a group to begin.</div>';
+      membersList.innerHTML = '<div style="padding:12px;color:var(--muted)">No group selected</div>';
+      document.querySelectorAll('.channel').forEach(ch => ch.classList.remove('active'));
+    }
+
+    leaveGroupBtn.addEventListener('click', leaveGroup);
+
+    /***** SEND MESSAGE *****/
+    function sendMessage(){
+      if (!currentGroup || !currentUser) { alert('Join a group first'); return; }
+      const text = messageInput.value.trim();
+      if (!text) return;
+      const msgRef = ref(db, 'groups/' + currentGroup + '/messages');
+      push(msgRef, {
+        name: currentUser,
+        text: text,
+        time: new Date().toISOString()
+      });
+      messageInput.value = '';
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', e => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    /***** ATTACH / DETACH LISTENERS FOR A GROUP *****/
+    function detachGroupListeners(){
+      // note: firebase onValue returns an unsubscribe? For RTDB we cannot directly detach anonymous onValue.
+      // Simpler approach: set the listeners again but scoped. To avoid duplicates we will set a unique ref and clear innerHTML.
+      // Here we just rely on using separate refs and that switching groups re-renders.
+    }
+
+    function attachGroupListeners(group){
+      // messages
+      const messagesRef = ref(db, 'groups/' + group + '/messages');
+      onValue(messagesRef, (snapshot) => {
+        // clear and render
+        messagesEl.innerHTML = '';
+        if (!snapshot.exists()){
+          messagesEl.innerHTML = '<div class="empty">No messages yet. Say hi 👋</div>';
+          return;
+        }
+        // snapshot is ordered by push time
         snapshot.forEach(child => {
           const msg = child.val();
-          const div = document.createElement("div");
-          div.className = "message";
-          div.innerHTML = `<strong>${msg.name}:</strong> ${msg.text}`;
-          chatMessages.appendChild(div);
+          renderMessage(msg);
         });
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        // autoscroll
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      });
+
+      // members
+      const membersRef = ref(db, 'groups/' + group + '/members');
+      onValue(membersRef, snap => {
+        membersList.innerHTML = '';
+        if (!snap.exists()){
+          membersList.innerHTML = '<div style="padding:12px;color:var(--muted)">No members</div>';
+          return;
+        }
+        snap.forEach(child => {
+          const key = decodeURIComponent(child.key);
+          const div = document.createElement('div');
+          div.className = 'member';
+          const av = document.createElement('div');
+          av.className = 'm-avatar';
+          av.style.background = colorForName(key);
+          av.textContent = initialsForName(key);
+          const info = document.createElement('div');
+          info.innerHTML = `<div class="m-name">${sanitize(key)}</div><div class="m-meta">joined</div>`;
+          div.appendChild(av);
+          div.appendChild(info);
+          membersList.appendChild(div);
+        });
       });
     }
 
-    sendBtn.addEventListener("click", () => {
-      const text = chatInput.value.trim();
-      if (!text || !currentGroup || !currentChannel) return;
-      push(ref(db, `groups/${currentGroup}/channels/${currentChannel}/messages`), {
-        name: "User",
-        text
-      });
-      chatInput.value = "";
+    /***** MESSAGE RENDER *****/
+    function renderMessage(msg){
+      // message structure: { name, text, time (ISO) }
+      const row = document.createElement('div');
+      row.className = 'message-row';
+
+      const av = document.createElement('div');
+      av.className = 'avatar';
+      av.style.background = colorForName(msg.name || 'anon');
+      av.textContent = initialsForName(msg.name || 'Anon');
+
+      const body = document.createElement('div');
+      body.className = 'message-body';
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+
+      const username = document.createElement('div');
+      username.className = 'username';
+      username.innerHTML = sanitize(msg.name || 'Unknown') + `<span class="tag">#${Math.floor(Math.random()*9999)}</span>`;
+
+      const timestamp = document.createElement('div');
+      timestamp.className = 'timestamp';
+      const d = new Date(msg.time || Date.now());
+      timestamp.textContent = d.toLocaleTimeString();
+      timestamp.title = d.toLocaleString();
+
+      const actions = document.createElement('div');
+      actions.className = 'msg-actions';
+      actions.innerHTML = `<div class="msg-action" title="React">😀</div><div class="msg-action" title="Reply">↩</div>`;
+
+      meta.appendChild(username);
+      meta.appendChild(timestamp);
+      meta.appendChild(actions);
+
+      const text = document.createElement('div');
+      text.className = 'msg-text';
+      text.textContent = sanitize(msg.text || '');
+
+      body.appendChild(meta);
+      body.appendChild(text);
+
+      row.appendChild(av);
+      row.appendChild(body);
+
+      messagesEl.appendChild(row);
+    }
+
+    /***** MODAL EVENTS *****/
+    openCreateBtn.addEventListener('click', ()=>{
+      modalGroup.value='';
+      modalPassword.value='';
+      modalUsername.value='';
+      modalTitle.textContent = 'Create Group';
+      modalCreate.style.display = 'inline-block';
+      modalJoin.style.display = 'none';
+      showModal();
     });
 
-    // ======= WebRTC Calling =======
-    let localStream;
-    let peerConnection;
-    const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
-
-    const startCallBtn = document.getElementById("startCallBtn");
-    const callModal = document.getElementById("callModal");
-    const localVideo = document.getElementById("localVideo");
-    const remoteVideo = document.getElementById("remoteVideo");
-    const endCallBtn = document.getElementById("endCallBtn");
-
-    async function startCall() {
-      callModal.classList.remove("hidden");
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      localVideo.srcObject = localStream;
-      peerConnection = new RTCPeerConnection(servers);
-      localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-      peerConnection.ontrack = (e) => { remoteVideo.srcObject = e.streams[0]; };
-      const callPath = `groups/${currentGroup}/calls/${currentChannel}`;
-      peerConnection.onicecandidate = (e) => { if (e.candidate) push(ref(db, `${callPath}/candidates`), e.candidate.toJSON()); };
-      const offer = await peerConnection.createOffer();
-      await peerConnection.setLocalDescription(offer);
-      await set(ref(db, `${callPath}/offer`), offer);
-      onValue(ref(db, `${callPath}/answer`), async (snap) => {
-        if (snap.exists() && !peerConnection.currentRemoteDescription) {
-          await peerConnection.setRemoteDescription(snap.val());
-        }
-      });
-      onValue(ref(db, `${callPath}/candidates`), (snap) => {
-        snap.forEach(async child => {
-          try { await peerConnection.addIceCandidate(new RTCIceCandidate(child.val())); } catch(e){}
-        });
-      });
-    }
-
-    async function joinCall() {
-      callModal.classList.remove("hidden");
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      localVideo.srcObject = localStream;
-      peerConnection = new RTCPeerConnection(servers);
-      localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-      peerConnection.ontrack = (e) => { remoteVideo.srcObject = e.streams[0]; };
-      peerConnection.onicecandidate = (e) => { if (e.candidate) push(ref(db, `groups/${currentGroup}/calls/${currentChannel}/candidates`), e.candidate.toJSON()); };
-      onValue(ref(db, `groups/${currentGroup}/calls/${currentChannel}/offer`), async (snap) => {
-        if (snap.exists() && !peerConnection.currentRemoteDescription) {
-          await peerConnection.setRemoteDescription(snap.val());
-          const answer = await peerConnection.createAnswer();
-          await peerConnection.setLocalDescription(answer);
-          await set(ref(db, `groups/${currentGroup}/calls/${currentChannel}/answer`), answer);
-        }
-      });
-      onValue(ref(db, `groups/${currentGroup}/calls/${currentChannel}/candidates`), (snap) => {
-        snap.forEach(async child => {
-          try { await peerConnection.addIceCandidate(new RTCIceCandidate(child.val())); } catch(e){}
-        });
-      });
-    }
-
-    function endCall() {
-      callModal.classList.add("hidden");
-      if (peerConnection) peerConnection.close();
-      if (localStream) localStream.getTracks().forEach(track => track.stop());
-      remoteVideo.srcObject = null;
-      localVideo.srcObject = null;
-    }
-
-    startCallBtn.addEventListener("click", async () => {
-      const offerRef = ref(db, `groups/${currentGroup}/calls/${currentChannel}/offer`);
-      onValue(offerRef, (snap) => {
-        if (snap.exists()) joinCall();
-        else startCall();
-      }, { onlyOnce: true });
+    openJoinBtn.addEventListener('click', ()=>{
+      modalGroup.value='';
+      modalPassword.value='';
+      modalUsername.value='';
+      modalTitle.textContent = 'Join Group';
+      modalCreate.style.display = 'none';
+      modalJoin.style.display = 'inline-block';
+      showModal();
     });
-    endCallBtn.addEventListener("click", endCall);
 
-    // Initial load
-    loadGroups();
+    modalCreate.addEventListener('click', createGroup);
+    modalJoin.addEventListener('click', joinGroupAction);
+
+    // Close modal on backdrop click
+    modalBackdrop.addEventListener('click', (e)=>{
+      if (e.target === modalBackdrop) hideModal();
+    });
+
+    /***** INITIALIZE *****/
+    // show groups list
+    loadGroupsList();
+
+    // show empty composer initially
+    hideComposer();
+
+    // optional: try to restore last group/name from localStorage
+    (function restore(){
+      try {
+        const lg = localStorage.getItem('fc_last_group');
+        const ln = localStorage.getItem('fc_name');
+        if (ln) modalUsername.value = ln;
+        if (lg) {
+          // try to prefill group join (user may join manually)
+          modalGroup.value = lg;
+        }
+      } catch(e){}
+    })();
+
+    // Save name on change
+    usernameInput.addEventListener('change', ()=> {
+      try { localStorage.setItem('fc_name', usernameInput.value.trim()); } catch(e){}
+    });
+
+    // When window unload, try to remove presence
+    window.addEventListener('beforeunload', async ()=>{
+      if (currentGroup && currentUser) {
+        try { await remove(ref(db, 'groups/' + currentGroup + '/members/' + encodeURIComponent(currentUser))); } catch(e){}
+      }
+    });
+
+    // expose send for debugging
+    window.sendMessage = sendMessage;
+
   </script>
 </body>
 </html>
