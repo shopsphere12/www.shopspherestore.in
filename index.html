@@ -18,7 +18,7 @@
     .container {
       background: #2f3136;
       width: 100%;
-      max-width: 600px;
+      max-width: 700px;
       height: 90vh;
       border-radius: 10px;
       display: flex;
@@ -55,11 +55,30 @@
     }
     button:hover { background: #4752c4; }
     #messages { flex: 1; overflow-y: auto; margin: 10px 0; }
-    .msg { margin-bottom: 8px; }
+    .msg { 
+      display: flex; 
+      align-items: flex-start; 
+      margin-bottom: 10px; 
+      background: #40444b;
+      padding: 8px;
+      border-radius: 6px;
+    }
+    .msg img.avatar {
+      width: 40px; 
+      height: 40px; 
+      border-radius: 50%; 
+      margin-right: 10px;
+    }
+    .msg-content { flex: 1; }
+    .msg strong { color: #00aff4; }
     .input-area {
       display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
-    .input-area input { flex: 1; margin-right: 6px; }
+    .input-row { display: flex; }
+    .input-row input { flex: 1; margin-right: 6px; }
+    .file-buttons { display: flex; gap: 6px; }
   </style>
 </head>
 <body>
@@ -69,6 +88,7 @@
     <!-- Join/Create Screen -->
     <div id="loginScreen" class="screen active">
       <input id="username" placeholder="Your username">
+      <input id="avatar" type="file" accept="image/*">
       <input id="groupName" placeholder="Group name">
       <input id="groupPassword" type="password" placeholder="Group password">
       <button id="joinBtn">Join Group</button>
@@ -79,15 +99,24 @@
     <div id="chatScreen" class="screen">
       <div id="messages"></div>
       <div class="input-area">
-        <input id="messageInput" placeholder="Type a message...">
-        <button id="sendBtn">Send</button>
+        <div class="input-row">
+          <input id="messageInput" placeholder="Type a message...">
+          <button id="sendBtn">Send</button>
+        </div>
+        <div class="file-buttons">
+          <input id="fileInput" type="file" accept="image/*,video/*,audio/*">
+          <button id="sendFileBtn">Send Media</button>
+          <button id="recordBtn">🎤 Record Voice</button>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
     import { getDatabase, ref, push, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+    import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyD0OAOSTic5z4U4obChkOieVLtvhgmIfxU",
@@ -102,10 +131,12 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    const storage = getStorage(app);
 
     const loginScreen = document.getElementById("loginScreen");
     const chatScreen = document.getElementById("chatScreen");
     const usernameInput = document.getElementById("username");
+    const avatarInput = document.getElementById("avatar");
     const groupNameInput = document.getElementById("groupName");
     const groupPasswordInput = document.getElementById("groupPassword");
     const joinBtn = document.getElementById("joinBtn");
@@ -113,18 +144,28 @@
     const messagesDiv = document.getElementById("messages");
     const messageInput = document.getElementById("messageInput");
     const sendBtn = document.getElementById("sendBtn");
+    const fileInput = document.getElementById("fileInput");
+    const sendFileBtn = document.getElementById("sendFileBtn");
+    const recordBtn = document.getElementById("recordBtn");
 
     let currentGroup = null;
     let currentUser = null;
+    let avatarURL = null;
+    let mediaRecorder;
+    let audioChunks = [];
+
+    async function uploadFile(file) {
+      const storageRef = sRef(storage, "uploads/" + Date.now() + "_" + file.name);
+      await uploadBytes(storageRef, file);
+      return await getDownloadURL(storageRef);
+    }
 
     async function createGroup() {
       const group = groupNameInput.value.trim();
       const password = groupPasswordInput.value.trim();
       if (!group || !password) return alert("Enter group and password!");
-
-      const groupRef = ref(db, "groups/" + group + "/password");
-      await set(groupRef, password);
-      alert("Group created! You can now join.");
+      await set(ref(db, "groups/" + group + "/password"), password);
+      alert("Group created!");
     }
 
     async function joinGroup() {
@@ -137,6 +178,10 @@
       if (!snapshot.exists()) return alert("Group not found!");
       if (snapshot.val() !== password) return alert("Wrong password!");
 
+      if (avatarInput.files.length > 0) {
+        avatarURL = await uploadFile(avatarInput.files[0]);
+      }
+
       currentGroup = group;
       currentUser = name;
       loginScreen.classList.remove("active");
@@ -144,14 +189,24 @@
       loadMessages();
     }
 
-    function sendMessage() {
-      if (!messageInput.value.trim()) return;
+    function sendMessage(text, type = "text") {
+      if (!text) return;
       push(ref(db, "groups/" + currentGroup + "/messages"), {
         name: currentUser,
-        text: messageInput.value,
+        avatar: avatarURL,
+        content: text,
+        type: type,
         time: new Date().toLocaleTimeString()
       });
       messageInput.value = "";
+    }
+
+    async function sendFile() {
+      if (fileInput.files.length === 0) return;
+      const file = fileInput.files[0];
+      const url = await uploadFile(file);
+      let type = file.type.startsWith("image") ? "image" : file.type.startsWith("video") ? "video" : "audio";
+      sendMessage(url, type);
     }
 
     function loadMessages() {
@@ -161,18 +216,52 @@
           const msg = child.val();
           const div = document.createElement("div");
           div.className = "msg";
-          div.textContent = `[${msg.time}] ${msg.name}: ${msg.text}`;
+          const avatar = msg.avatar ? `<img src="${msg.avatar}" class="avatar">` : `<img src="https://via.placeholder.com/40" class="avatar">`;
+          let content = "";
+          if (msg.type === "text") content = `<strong>${msg.name}</strong>: ${msg.content}`;
+          else if (msg.type === "image") content = `<strong>${msg.name}</strong>: <br><img src="${msg.content}" style="max-width:200px;border-radius:6px;">`;
+          else if (msg.type === "video") content = `<strong>${msg.name}</strong>: <br><video src="${msg.content}" controls style="max-width:200px;"></video>`;
+          else if (msg.type === "audio") content = `<strong>${msg.name}</strong>: <br><audio src="${msg.content}" controls></audio>`;
+          div.innerHTML = avatar + `<div class="msg-content">${content}<br><span style="font-size:10px;color:gray">${msg.time}</span></div>`;
           messagesDiv.appendChild(div);
         });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
     }
 
+    function startRecording() {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.start();
+        audioChunks = [];
+        mediaRecorder.addEventListener("dataavailable", e => {
+          audioChunks.push(e.data);
+        });
+        mediaRecorder.addEventListener("stop", async () => {
+          const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+          const file = new File([audioBlob], "voice_" + Date.now() + ".webm", { type: "audio/webm" });
+          const url = await uploadFile(file);
+          sendMessage(url, "audio");
+        });
+      });
+    }
+
     createBtn.addEventListener("click", createGroup);
     joinBtn.addEventListener("click", joinGroup);
-    sendBtn.addEventListener("click", sendMessage);
-    messageInput.addEventListener("keypress", e => {
-      if (e.key === "Enter") sendMessage();
+    sendBtn.addEventListener("click", () => sendMessage(messageInput.value, "text"));
+    messageInput.addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(messageInput.value, "text"); });
+    sendFileBtn.addEventListener("click", sendFile);
+
+    let recording = false;
+    recordBtn.addEventListener("click", () => {
+      if (!recording) {
+        startRecording();
+        recordBtn.textContent = "⏹ Stop";
+      } else {
+        mediaRecorder.stop();
+        recordBtn.textContent = "🎤 Record Voice";
+      }
+      recording = !recording;
     });
   </script>
 </body>
