@@ -1,88 +1,304 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Maxed Out Group Chat</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Protected Group Chat</title>
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
+    /* ========= RESET ========= */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
-      background: linear-gradient(135deg,#23272a,#2c2f33);
-      color:#fff; display:flex; justify-content:center; align-items:center;
-      height:100vh; overflow:hidden;
+      background: #2c2f33;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
     }
+
     .container {
-      background:#23272a; width:100%; max-width:1000px; height:95vh;
-      border-radius:14px; display:flex; flex-direction:column;
-      overflow:hidden; box-shadow:0 0 25px rgba(0,0,0,0.7);
+      background: #23272a;
+      width: 100%;
+      max-width: 900px;
+      height: 90vh;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 0 25px rgba(0,0,0,0.6);
       animation: fadeIn 1s ease-in-out;
+      position: relative;
     }
-    @keyframes fadeIn { from{opacity:0;transform:scale(0.95);} to{opacity:1;transform:scale(1);} }
 
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* ========= HEADER ========= */
     .header {
-      padding:16px; background:linear-gradient(90deg,#5865f2,#404eed);
-      text-align:center; font-weight:bold; font-size:22px; letter-spacing:1px;
-      box-shadow:0 2px 8px rgba(0,0,0,0.6);
+      padding: 16px;
+      background: linear-gradient(90deg, #5865f2, #404eed);
+      text-align: center;
+      font-weight: bold;
+      font-size: 20px;
+      letter-spacing: 1px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
     }
 
-    .screen { flex:1; display:none; flex-direction:column; padding:20px; overflow-y:auto; }
-    .active { display:flex; }
-
-    input,button {
-      padding:12px; margin:8px 0; border-radius:8px; border:none;
-      font-size:15px; transition:0.3s ease;
+    /* ========= SCREENS ========= */
+    .screen {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      padding: 20px;
+      overflow-y: auto;
+      animation: slideUp 0.5s ease;
     }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .active { display: flex; }
+
+    /* ========= INPUTS & BUTTONS ========= */
+    input, button {
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 8px;
+      border: none;
+      font-size: 15px;
+      transition: 0.3s ease;
+    }
+
     input {
-      width:100%; background:#40444b; color:#fff; outline:none;
+      width: 100%;
+      background: #40444b;
+      color: #fff;
+      outline: none;
     }
-    input:focus { background:#36393f; border:1px solid #5865f2; }
+
+    input:focus {
+      background: #36393f;
+      border: 1px solid #5865f2;
+    }
+
     button {
-      background:#5865f2; color:#fff; cursor:pointer; font-weight:bold;
+      background: #5865f2;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
     }
-    button:hover { background:#4752c4; transform:scale(1.05); }
 
-    /* Layout */
-    .chatLayout { display:flex; flex:1; gap:12px; }
-    .userList {
-      width:200px; background:#202225; padding:10px; border-radius:8px;
-      overflow-y:auto; animation: slideIn 0.5s ease;
+    button:hover {
+      background: #4752c4;
+      transform: scale(1.05);
     }
-    @keyframes slideIn { from{transform:translateX(-20px);opacity:0;} to{transform:translateX(0);opacity:1;} }
-    .user { padding:8px; margin-bottom:6px; border-radius:6px; background:#2c2f33; }
-    .user.online { border-left:4px solid #43b581; }
-    .user.offline { border-left:4px solid #f04747; }
 
-    #messages { flex:1; overflow-y:auto; padding-right:8px; }
+    /* ========= CHAT LAYOUT ========= */
+    .chat-wrapper {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      margin: 10px 0;
+      padding-right: 6px;
+      scrollbar-width: thin;
+      scrollbar-color: #5865f2 #2c2f33;
+    }
+
+    #messages::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #messages::-webkit-scrollbar-thumb {
+      background: #5865f2;
+      border-radius: 8px;
+    }
+
+    /* ========= USER LIST ========= */
+    .users-panel {
+      width: 200px;
+      background: #202225;
+      border-left: 2px solid #18191c;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      animation: slideRight 0.4s ease;
+    }
+
+    @keyframes slideRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .users-panel h3 {
+      font-size: 16px;
+      margin-bottom: 8px;
+      color: #00aff4;
+      text-align: center;
+    }
+
+    .user-item {
+      padding: 8px;
+      margin: 4px 0;
+      border-radius: 6px;
+      background: #2f3136;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: popIn 0.3s ease;
+    }
+
+    .user-status {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: limegreen;
+    }
+
+    /* ========= MESSAGES ========= */
     .msg {
-      margin-bottom:12px; padding:10px 14px; background:#40444b; border-radius:8px;
-      animation: popIn 0.3s ease; position:relative;
+      margin-bottom: 14px;
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      animation: popIn 0.3s ease;
+      display: flex;
+      gap: 10px;
+      word-wrap: break-word;
     }
-    @keyframes popIn { from{opacity:0;transform:translateY(10px) scale(0.95);} to{opacity:1;transform:translateY(0) scale(1);} }
-    .msg.self { background:#5865f2; text-align:right; margin-left:auto; color:#fff; font-weight:bold; }
-    .msg strong { color:#00aff4; }
 
-    .seen { font-size:10px; position:absolute; bottom:2px; right:6px; color:#aaa; }
+    @keyframes popIn {
+      from { opacity: 0; transform: translateY(10px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
 
-    .system { text-align:center; font-style:italic; font-size:13px; color:#bbb; margin:8px 0; }
+    .msg.self {
+      background: #5865f2;
+      color: #fff;
+      margin-left: auto;
+      text-align: left;
+      border-bottom-right-radius: 4px;
+    }
 
-    .typing { font-size:12px; color:#bbb; font-style:italic; margin-top:4px; }
+    .msg.other {
+      background: #40444b;
+      color: #fff;
+      margin-right: auto;
+      border-bottom-left-radius: 4px;
+    }
 
-    .input-area { display:flex; align-items:center; background:#202225; padding:12px; border-top:2px solid #18191c; }
-    .input-area input { flex:1; margin-right:10px; }
-    .emoji-picker { margin-right:8px; cursor:pointer; }
+    .msg-header {
+      font-size: 13px;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-    @media(max-width:700px) {
-      .chatLayout { flex-direction:column; }
-      .userList { width:100%; height:100px; display:flex; flex-wrap:wrap; }
+    .msg-username {
+      color: #00aff4;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+
+    .msg-time {
+      font-size: 11px;
+      color: #bbb;
+    }
+
+    /* ========= AVATAR ========= */
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #5865f2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #fff;
+      flex-shrink: 0;
+      box-shadow: 0 0 5px rgba(0,0,0,0.4);
+    }
+
+    .msg-content { flex: 1; }
+
+    /* ========= SYSTEM MESSAGE ========= */
+    .system-msg {
+      text-align: center;
+      font-size: 13px;
+      color: #aaa;
+      margin: 8px 0;
+      font-style: italic;
+    }
+
+    /* ========= INPUT AREA ========= */
+    .input-area {
+      display: flex;
+      background: #202225;
+      padding: 12px;
+      border-top: 2px solid #18191c;
+      gap: 6px;
+    }
+
+    .input-area input {
+      flex: 1;
+      margin-right: 10px;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .emoji-btn {
+      background: #40444b;
+      font-size: 20px;
+      cursor: pointer;
+      border-radius: 8px;
+      padding: 6px 10px;
+    }
+
+    .emoji-btn:hover { background: #36393f; }
+
+    .typing-indicator {
+      font-size: 12px;
+      color: #bbb;
+      font-style: italic;
+      animation: blink 1s infinite;
+      margin: 4px 0;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+
+    /* ========= RESPONSIVE ========= */
+    @media (max-width: 600px) {
+      .container { max-width: 100%; height: 100vh; border-radius: 0; }
+      .users-panel { display: none; }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">💬 Maxed Out Group Chat</div>
+    <div class="header">🔒 Group Chat</div>
 
-    <!-- Login -->
+    <!-- Join/Create Screen -->
     <div id="loginScreen" class="screen active">
       <input id="username" placeholder="Your username">
       <input id="groupName" placeholder="Group name">
@@ -91,176 +307,217 @@
       <button id="createBtn">Create Group</button>
     </div>
 
-    <!-- Chat -->
+    <!-- Chat Screen -->
     <div id="chatScreen" class="screen">
-      <div class="chatLayout">
-        <div class="userList">
-          <h4>👥 Online Users</h4>
-          <div id="userList"></div>
+      <div class="chat-wrapper">
+        <div id="messages"></div>
+        <div class="users-panel">
+          <h3>👥 Online</h3>
+          <div id="onlineUsers"></div>
         </div>
-        <div class="chatArea" style="flex:1;display:flex;flex-direction:column;">
-          <div id="messages"></div>
-          <div id="typingArea"></div>
-          <div class="input-area">
-            <span class="emoji-picker">😀</span>
-            <input id="messageInput" placeholder="Type a message...">
-            <button id="sendBtn">Send</button>
-          </div>
-        </div>
+      </div>
+      <div class="typing-indicator" id="typingIndicator" style="display:none;"></div>
+      <div class="input-area">
+        <button class="emoji-btn" id="emojiBtn">😊</button>
+        <input id="messageInput" placeholder="Type a message... (Enter = send, Shift+Enter = newline)">
+        <button id="sendBtn">Send</button>
       </div>
     </div>
   </div>
 
-  <!-- Emoji Picker -->
-  <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-    import { getDatabase, ref, push, set, get, child, onValue, onDisconnect, update } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+    import { getDatabase, ref, push, set, get, child, onValue, remove, update } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
     const firebaseConfig = {
-     apiKey: "AIzaSyD0OAOSTic5z4U4obChkOieVLtvhgmIfxU",
-    authDomain: "friend-chat-eaabe.firebaseapp.com",
-    projectId: "friend-chat-eaabe",
-    storageBucket: "friend-chat-eaabe.firebasestorage.app",
-    messagingSenderId: "409498465855",
-    appId: "1:409498465855:web:bfec1da1a2f29a1f73aa8a",
-    measurementId: "G-DHE9SKBE8L"
+      apiKey: "AIzaSyD0OAOSTic5z4U4obChkOieVLtvhgmIfxU",
+      authDomain: "friend-chat-eaabe.firebaseapp.com",
+      databaseURL: "https://friend-chat-eaabe-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "friend-chat-eaabe",
+      storageBucket: "friend-chat-eaabe.appspot.com",
+      messagingSenderId: "409498465855",
+      appId: "1:409498465855:web:bfec1da1a2f29a1f73aa8a",
+      measurementId: "G-DHE9SKBE8L"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const loginScreen=document.getElementById("loginScreen");
-    const chatScreen=document.getElementById("chatScreen");
-    const usernameInput=document.getElementById("username");
-    const groupNameInput=document.getElementById("groupName");
-    const groupPasswordInput=document.getElementById("groupPassword");
-    const joinBtn=document.getElementById("joinBtn");
-    const createBtn=document.getElementById("createBtn");
-    const messagesDiv=document.getElementById("messages");
-    const messageInput=document.getElementById("messageInput");
-    const sendBtn=document.getElementById("sendBtn");
-    const userList=document.getElementById("userList");
-    const typingArea=document.getElementById("typingArea");
-    const emojiBtn=document.querySelector(".emoji-picker");
+    const loginScreen = document.getElementById("loginScreen");
+    const chatScreen = document.getElementById("chatScreen");
+    const usernameInput = document.getElementById("username");
+    const groupNameInput = document.getElementById("groupName");
+    const groupPasswordInput = document.getElementById("groupPassword");
+    const joinBtn = document.getElementById("joinBtn");
+    const createBtn = document.getElementById("createBtn");
+    const messagesDiv = document.getElementById("messages");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const typingIndicator = document.getElementById("typingIndicator");
+    const onlineUsersDiv = document.getElementById("onlineUsers");
+    const emojiBtn = document.getElementById("emojiBtn");
 
-    let currentGroup=null; let currentUser=null;
+    let currentGroup = null;
+    let currentUser = null;
+    let typingTimeout;
 
-    async function createGroup(){
-      const group=groupNameInput.value.trim();
-      const password=groupPasswordInput.value.trim();
-      if(!group||!password) return alert("Enter group & password!");
-      await set(ref(db,"groups/"+group+"/password"),password);
-      alert("Group created! Now join.");
+    async function createGroup() {
+      const group = groupNameInput.value.trim();
+      const password = groupPasswordInput.value.trim();
+      if (!group || !password) return alert("Enter group and password!");
+
+      const groupRef = ref(db, "groups/" + group + "/password");
+      await set(groupRef, password);
+      alert("Group created! You can now join.");
     }
 
-    async function joinGroup(){
-      const group=groupNameInput.value.trim();
-      const password=groupPasswordInput.value.trim();
-      const name=usernameInput.value.trim();
-      if(!group||!password||!name) return alert("Fill all fields!");
-      const snapshot=await get(child(ref(db),"groups/"+group+"/password"));
-      if(!snapshot.exists()) return alert("Group not found!");
-      if(snapshot.val()!==password) return alert("Wrong password!");
-      currentGroup=group; currentUser=name;
+    async function joinGroup() {
+      const group = groupNameInput.value.trim();
+      const password = groupPasswordInput.value.trim();
+      const name = usernameInput.value.trim();
+      if (!group || !password || !name) return alert("Fill all fields!");
 
-      // Mark online
-      const userRef=ref(db,"groups/"+group+"/users/"+name);
-      await set(userRef,{status:"online"});
-      onDisconnect(userRef).set({status:"offline"});
+      const snapshot = await get(child(ref(db), "groups/" + group + "/password"));
+      if (!snapshot.exists()) return alert("Group not found!");
+      if (snapshot.val() !== password) return alert("Wrong password!");
 
-      systemMessage(name+" joined the chat");
-
+      currentGroup = group;
+      currentUser = name;
       loginScreen.classList.remove("active");
       chatScreen.classList.add("active");
-      loadMessages(); loadUsers(); loadTyping();
-    }
 
-    function systemMessage(text){
-      const sysRef=push(ref(db,"groups/"+currentGroup+"/messages"));
-      set(sysRef,{name:"SYSTEM",text,time:new Date().toLocaleTimeString(),system:true});
-    }
+      // Add to online users
+      const userRef = ref(db, "groups/" + currentGroup + "/online/" + currentUser);
+      set(userRef, true);
 
-    function sendMessage(){
-      if(!messageInput.value.trim()) return;
-      push(ref(db,"groups/"+currentGroup+"/messages"),{
-        name:currentUser,text:messageInput.value,time:new Date().toLocaleTimeString(),seenBy:{[currentUser]:true}
+      // Remove user when leaving tab
+      window.addEventListener("beforeunload", () => {
+        remove(userRef);
+        push(ref(db, "groups/" + currentGroup + "/messages"), {
+          system: true,
+          text: `${currentUser} left the chat`,
+          time: new Date().toLocaleTimeString()
+        });
       });
-      messageInput.value=""; stopTyping();
+
+      // System join message
+      push(ref(db, "groups/" + currentGroup + "/messages"), {
+        system: true,
+        text: `${currentUser} joined the chat`,
+        time: new Date().toLocaleTimeString()
+      });
+
+      loadMessages();
+      loadOnlineUsers();
     }
 
-    function loadMessages(){
-      onValue(ref(db,"groups/"+currentGroup+"/messages"),snap=>{
-        messagesDiv.innerHTML="";
-        snap.forEach(child=>{
-          const msg=child.val();
-          const div=document.createElement("div");
-          if(msg.system){ div.className="system"; div.textContent=msg.text; }
-          else{
-            div.className="msg"+(msg.name===currentUser?" self":"");
-            div.innerHTML=`<strong>${msg.name}</strong>: ${msg.text}<div class="seen">✔✔</div>`;
+    function sendMessage() {
+      if (!messageInput.value.trim()) return;
+      push(ref(db, "groups/" + currentGroup + "/messages"), {
+        name: currentUser,
+        text: messageInput.value,
+        time: new Date().toLocaleTimeString()
+      });
+      messageInput.value = "";
+    }
+
+    function loadMessages() {
+      onValue(ref(db, "groups/" + currentGroup + "/messages"), snapshot => {
+        messagesDiv.innerHTML = "";
+        snapshot.forEach(child => {
+          const msg = child.val();
+
+          // System message
+          if (msg.system) {
+            const sys = document.createElement("div");
+            sys.className = "system-msg";
+            sys.textContent = msg.text;
+            messagesDiv.appendChild(sys);
+            return;
           }
+
+          const div = document.createElement("div");
+          div.className = "msg " + (msg.name === currentUser ? "self" : "other");
+
+          // Avatar
+          const avatar = document.createElement("div");
+          avatar.className = "avatar";
+          avatar.textContent = msg.name.charAt(0).toUpperCase();
+
+          const content = document.createElement("div");
+          content.className = "msg-content";
+
+          // message header (username + time)
+          const header = document.createElement("div");
+          header.className = "msg-header";
+
+          const uname = document.createElement("span");
+          uname.className = "msg-username";
+          uname.textContent = msg.name;
+
+          const time = document.createElement("span");
+          time.className = "msg-time";
+          time.textContent = msg.time;
+
+          header.appendChild(uname);
+          header.appendChild(time);
+
+          const text = document.createElement("div");
+          text.textContent = msg.text;
+
+          content.appendChild(header);
+          content.appendChild(text);
+
+          if (msg.name === currentUser) {
+            div.appendChild(content);
+          } else {
+            div.appendChild(avatar);
+            div.appendChild(content);
+          }
+
           messagesDiv.appendChild(div);
         });
-        messagesDiv.scrollTop=messagesDiv.scrollHeight;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
     }
 
-    function loadUsers(){
-      onValue(ref(db,"groups/"+currentGroup+"/users"),snap=>{
-        userList.innerHTML="";
-        snap.forEach(child=>{
-          const u=child.key; const val=child.val();
-          const div=document.createElement("div");
-          div.className="user "+(val.status==="online"?"online":"offline");
-          div.textContent=u;
-          userList.appendChild(div);
+    function loadOnlineUsers() {
+      onValue(ref(db, "groups/" + currentGroup + "/online"), snapshot => {
+        onlineUsersDiv.innerHTML = "";
+        snapshot.forEach(child => {
+          const uname = child.key;
+          const div = document.createElement("div");
+          div.className = "user-item";
+          const dot = document.createElement("div");
+          dot.className = "user-status";
+          div.appendChild(dot);
+          const nameSpan = document.createElement("span");
+          nameSpan.textContent = uname;
+          div.appendChild(nameSpan);
+          onlineUsersDiv.appendChild(div);
         });
       });
     }
 
-    function startTyping(){
-      set(ref(db,"groups/"+currentGroup+"/typing/"+currentUser),true);
-    }
-    function stopTyping(){
-      set(ref(db,"groups/"+currentGroup+"/typing/"+currentUser),false);
-    }
-    function loadTyping(){
-      onValue(ref(db,"groups/"+currentGroup+"/typing"),snap=>{
-        typingArea.innerHTML="";
-        snap.forEach(child=>{
-          if(child.val()===true && child.key!==currentUser){
-            const div=document.createElement("div");
-            div.className="typing";
-            div.textContent=child.key+" is typing...";
-            typingArea.appendChild(div);
-          }
-        });
-      });
-    }
+    createBtn.addEventListener("click", createGroup);
+    joinBtn.addEventListener("click", joinGroup);
+    sendBtn.addEventListener("click", sendMessage);
 
-    // Events
-    createBtn.addEventListener("click",createGroup);
-    joinBtn.addEventListener("click",joinGroup);
-    sendBtn.addEventListener("click",sendMessage);
-    messageInput.addEventListener("keypress",e=>{
-      if(e.key==="Enter") sendMessage();
-      else startTyping();
+    messageInput.addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
     });
-    messageInput.addEventListener("blur",stopTyping);
 
-    // Emoji picker
-    emojiBtn.addEventListener("click",()=>{
-      const picker=document.createElement("emoji-picker");
-      picker.style.position="absolute"; picker.style.bottom="70px"; picker.style.right="30px";
-      picker.addEventListener("emoji-click",event=>{
-        messageInput.value+=event.detail.unicode;
-        picker.remove();
-      });
-      document.body.appendChild(picker);
+    // Emoji picker (simple)
+    emojiBtn.addEventListener("click", () => {
+      const emoji = prompt("Enter emoji:");
+      if (emoji) {
+        messageInput.value += " " + emoji;
+        messageInput.focus();
+      }
     });
   </script>
 </body>
 </html>
-
