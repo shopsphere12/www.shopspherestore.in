@@ -123,11 +123,14 @@
     }
 
     .msg {
-      margin-bottom: 12px;
+      margin-bottom: 14px;
+      max-width: 75%;
       padding: 10px 14px;
-      background: #40444b;
-      border-radius: 8px;
+      border-radius: 12px;
       animation: popIn 0.3s ease;
+      display: flex;
+      gap: 10px;
+      word-wrap: break-word;
     }
 
     @keyframes popIn {
@@ -137,14 +140,64 @@
 
     .msg.self {
       background: #5865f2;
-      text-align: right;
-      margin-left: auto;
       color: #fff;
-      font-weight: bold;
+      margin-left: auto;
+      text-align: left;
+      border-bottom-right-radius: 4px;
     }
 
-    .msg strong {
+    .msg.other {
+      background: #40444b;
+      color: #fff;
+      margin-right: auto;
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg-header {
+      font-size: 13px;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .msg-username {
       color: #00aff4;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+
+    .msg-time {
+      font-size: 11px;
+      color: #bbb;
+    }
+
+    /* ========= AVATAR ========= */
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #5865f2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #fff;
+      flex-shrink: 0;
+      box-shadow: 0 0 5px rgba(0,0,0,0.4);
+    }
+
+    .msg-content {
+      flex: 1;
+    }
+
+    /* ========= SYSTEM MESSAGE ========= */
+    .system-msg {
+      text-align: center;
+      font-size: 13px;
+      color: #aaa;
+      margin: 8px 0;
+      font-style: italic;
     }
 
     /* ========= INPUT AREA ========= */
@@ -167,6 +220,7 @@
       color: #bbb;
       font-style: italic;
       animation: blink 1s infinite;
+      margin: 4px 0;
     }
 
     @keyframes blink {
@@ -200,9 +254,9 @@
     <!-- Chat Screen -->
     <div id="chatScreen" class="screen">
       <div id="messages"></div>
-      <div class="typing-indicator" id="typingIndicator" style="display:none;">Someone is typing...</div>
+      <div class="typing-indicator" id="typingIndicator" style="display:none;"></div>
       <div class="input-area">
-        <input id="messageInput" placeholder="Type a message...">
+        <input id="messageInput" placeholder="Type a message... (Enter = send, Shift+Enter = newline)">
         <button id="sendBtn">Send</button>
       </div>
     </div>
@@ -210,7 +264,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-    import { getDatabase, ref, push, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+    import { getDatabase, ref, push, set, get, child, onValue, update } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyD0OAOSTic5z4U4obChkOieVLtvhgmIfxU",
@@ -266,6 +320,14 @@
       currentUser = name;
       loginScreen.classList.remove("active");
       chatScreen.classList.add("active");
+
+      // System join message
+      push(ref(db, "groups/" + currentGroup + "/messages"), {
+        system: true,
+        text: `${currentUser} joined the chat`,
+        time: new Date().toLocaleTimeString()
+      });
+
       loadMessages();
     }
 
@@ -284,9 +346,55 @@
         messagesDiv.innerHTML = "";
         snapshot.forEach(child => {
           const msg = child.val();
+
+          // System message
+          if (msg.system) {
+            const sys = document.createElement("div");
+            sys.className = "system-msg";
+            sys.textContent = msg.text;
+            messagesDiv.appendChild(sys);
+            return;
+          }
+
           const div = document.createElement("div");
-          div.className = "msg" + (msg.name === currentUser ? " self" : "");
-          div.textContent = `[${msg.time}] ${msg.name}: ${msg.text}`;
+          div.className = "msg " + (msg.name === currentUser ? "self" : "other");
+
+          // Avatar
+          const avatar = document.createElement("div");
+          avatar.className = "avatar";
+          avatar.textContent = msg.name.charAt(0).toUpperCase();
+
+          const content = document.createElement("div");
+          content.className = "msg-content";
+
+          // message header (username + time)
+          const header = document.createElement("div");
+          header.className = "msg-header";
+
+          const uname = document.createElement("span");
+          uname.className = "msg-username";
+          uname.textContent = msg.name;
+
+          const time = document.createElement("span");
+          time.className = "msg-time";
+          time.textContent = msg.time;
+
+          header.appendChild(uname);
+          header.appendChild(time);
+
+          const text = document.createElement("div");
+          text.textContent = msg.text;
+
+          content.appendChild(header);
+          content.appendChild(text);
+
+          if (msg.name === currentUser) {
+            div.appendChild(content);
+          } else {
+            div.appendChild(avatar);
+            div.appendChild(content);
+          }
+
           messagesDiv.appendChild(div);
         });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -297,13 +405,17 @@
     joinBtn.addEventListener("click", joinGroup);
     sendBtn.addEventListener("click", sendMessage);
 
-    messageInput.addEventListener("keypress", e => {
-      if (e.key === "Enter") sendMessage();
+    messageInput.addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
       showTyping();
     });
 
     function showTyping() {
       typingIndicator.style.display = "block";
+      typingIndicator.textContent = currentUser + " is typing...";
       clearTimeout(typingTimeout);
       typingTimeout = setTimeout(() => {
         typingIndicator.style.display = "none";
